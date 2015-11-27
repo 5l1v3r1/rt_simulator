@@ -16,7 +16,19 @@ namespace NRTSimulator {
 	void setRealtimePriority(int priority) {
 		struct sched_param param;
 		param.sched_priority = priority;
-		sched_setscheduler(0, SCHED_FIFO, &param);
+		if (sched_setscheduler(0, SCHED_FIFO, &param)) {
+			std::cout << "Failed to set RT priority." << std::endl;
+		}
+	}
+
+	void setAffinity(int cpu) {
+		cpu_set_t set;
+		CPU_ZERO(&set);
+        CPU_SET(cpu, &set);
+
+        if (sched_setaffinity(0, sizeof(set), &set) == -1) {
+        	std::cout << "Failed to set cpu." << std::endl;
+        }            
 	}
 
 
@@ -42,22 +54,27 @@ namespace NRTSimulator {
 		return val;
 	}
 
-	TTask parseTaskParameters(const int argc, const char * const argv[], long long & start, long long & end, int & priority) {
+	TTask parseTaskParameters(const int argc, const char * const argv[], long long & start, 
+			long long & end, int & priority, int & cpu) {
 
-		// Usage: Priority CountExecutions Mass_i Execution_i Period Offset End ConvertRate
+		// Usage: CPU Priority CountExecutions Mass_i Execution_i Period Offset End ConvertRate
 		if (argc < 7) {
 			std::cout << FAILED_TO_PARSE_ARG_MESSAGE << std::endl;
 			exit(-1);
 		}
 
-		int currentArgIndex = 0;
+		int currentArgIndex = 1;
+
+		cpu = stringToLong(argv[currentArgIndex]);
+		++currentArgIndex;
+
 		priority = stringToLong(argv[currentArgIndex]);
 		++currentArgIndex;
 
 		int countExecutions = stringToLong(argv[currentArgIndex]);
 		++currentArgIndex;
 
-		if ( 2 * countExecutions != argc - 6) {
+		if ( 2 * countExecutions != argc - 8) {
 			std::cout << FAILED_TO_PARSE_ARG_MESSAGE << std::endl;
 			exit(-1);
 		}
@@ -97,41 +114,44 @@ int main(int argc, char *argv[])
 {
 	//TODO: set process affinity
 	//TODO: remove this part
-	const int arg_count = 14;
+	const int arg_count = 16;
 	char * args[arg_count];
 	for (int i = 0; i < arg_count; ++i) {
 		args[i] = new char[255];
 	}
-	args[0] = "80";
-	args[1] = "4";
-	args[2] = "0.1";
-	args[3] = "10000000";
-	args[4] = "0.4";
+	args[0] = "task";
+	args[1] = "0";
+	args[2] = "80";
+	args[3] = "4";
+	args[4] = "0.1";
 	args[5] = "20000000";
-	args[6] = "0.2";
-	args[7] = "30000000";
-	args[8] = "0.3";
-	args[9] = "30000000";
-	args[10] = "100000000";
+	args[6] = "0.4";
+	args[7] = "20000000";
+	args[8] = "0.2";
+	args[9] = "20000000";
+	args[10] = "0.3";
+	args[11] = "20000000";
+	args[12] = "100000000";
 	std::stringstream s;
 	s << std::chrono::duration_cast<std::chrono::nanoseconds>
 					((std::chrono::high_resolution_clock::now() + std::chrono::seconds(2)).time_since_epoch()).count();
-	strcpy(args[11], s.str().c_str());
+	strcpy(args[13], s.str().c_str());
 	std::stringstream e;
 	e << std::chrono::duration_cast<std::chrono::nanoseconds>
 					((std::chrono::high_resolution_clock::now() + std::chrono::seconds(7)).time_since_epoch()).count();
-	strcpy(args[12], e.str().c_str());
-	args[13] = "4.1";
+	strcpy(args[14], e.str().c_str());
+	args[15] = "6";
 	//////////////////////////////
 
 
 
-	int priority;
+	int priority, cpu;
 	long long offset, endSimulation;
 
-	NRTSimulator::TTask task = NRTSimulator::parseTaskParameters(arg_count, args, offset, endSimulation, priority);
+	NRTSimulator::TTask task = NRTSimulator::parseTaskParameters(arg_count, args, offset, endSimulation, priority, cpu);
 
 	NRTSimulator::setRealtimePriority(priority);
+	NRTSimulator::setAffinity(cpu);
 
 	std::cout << "Worst case execution time: " << task.Run(offset, endSimulation) << std::endl;
 }
