@@ -3,7 +3,10 @@
 #include <pthread.h>
 #include <iostream>
 
+#include <map>
+
 #include "task.h"
+#include "random_var.h"
 
 
 namespace NRTSimulator {
@@ -18,9 +21,10 @@ namespace NRTSimulator {
 int main(int argc, char *argv[])
 {
 	NRTSimulator::setRealtimePriority(80);
-
-	long long executionTime (20 * 1000 * 1000);
-	long long period (50 * 1000 * 1000);
+	
+	NRTSimulator::TRandomVar executionTime ({0.1, 0.4, 0.2, 0.3}, 
+			{20 * 1000 * 1000, 30 * 1000 * 1000, 40 * 1000 * 1000, 50 * 1000 * 1000});
+	long long period (100 * 1000 * 1000);
 
 	long long offset = std::chrono::duration_cast<std::chrono::nanoseconds>(
 			(std::chrono::high_resolution_clock::now() + std::chrono::seconds(2)).time_since_epoch()).count();
@@ -28,7 +32,7 @@ int main(int argc, char *argv[])
 	long long endSimulation = std::chrono::duration_cast<std::chrono::nanoseconds>(
 			(std::chrono::high_resolution_clock::now() + std::chrono::seconds(7)).time_since_epoch()).count();
 
-	NRTSimulator::TTask task(executionTime, period, 5.5);	
+	NRTSimulator::TTask task(executionTime, period, 4.1);	
 
 	std::cout << "Worst case execution time: " << task.Run(offset, endSimulation) << std::endl;
 }

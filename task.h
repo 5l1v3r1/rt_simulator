@@ -5,13 +5,15 @@
 #include <time.h>
 #include <chrono>
 
+#include "random_var.h"
 
 namespace NRTSimulator {
 	class TTask
 	{
 	private:
-		long long ExecutionTime;
+		TRandomVar ExecutionTime;
 		long long Period;
+		double ConvertRate;
 			
 		long long CountTo;
 
@@ -25,7 +27,7 @@ namespace NRTSimulator {
 		struct itimerspec JobFireTimeSpec;
 	public:
 		//ConvertRate how many ns one "long long" addition take.
-		TTask(long long executionTime, long long  period,  double convertRate);
+		TTask(TRandomVar executionTime, long long  period,  double convertRate);
 		long long Run(long long startAt, long long endAt);
 		~TTask();
 	private:

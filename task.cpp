@@ -17,11 +17,12 @@
 namespace NRTSimulator {
 
 
-    TTask::TTask(long long executionTime, long long period, double convertRate)
+    TTask::TTask(TRandomVar executionTime, long long period, double convertRate)
         : ExecutionTime(executionTime)
         , Period(period)
+        , ConvertRate(convertRate)
     {
-        CountTo = executionTime / convertRate;
+
     }
 
     TTask::~TTask() {
@@ -67,6 +68,7 @@ namespace NRTSimulator {
 
         while (true) {
             WaitForNextActivation();
+            CountTo = ExecutionTime.Sample() / ConvertRate;
             auto start = std::chrono::high_resolution_clock::now();            
             JobBody();
             auto end = std::chrono::high_resolution_clock::now();            
