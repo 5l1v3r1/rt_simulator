@@ -9,20 +9,24 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <limits>
+
 #include "task.h"
 
 
 namespace NRTSimulator {
-    TTask::TTask(long long executionTime, long long period, long long offset, double convertRate)
+
+
+    TTask::TTask(long long executionTime, long long period, double convertRate)
         : ExecutionTime(executionTime)
         , Period(period)
-        , Offset(offset)
     {
         CountTo = executionTime / convertRate;
-        std::cout << CountTo << std::endl;
     }
 
-    TTask::~TTask(){};
+    TTask::~TTask() {
+        timer_delete(JobFireTimer);
+    }
 
     void TTask::InitializeTimer() {
         struct sigevent jobFireEvent;
@@ -40,29 +44,41 @@ namespace NRTSimulator {
 
     void TTask::InitializeTimerSpec() {
         long long nsInS = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
-        JobDoneTimeSpec.it_value.tv_sec = Offset / nsInS;
-        JobDoneTimeSpec.it_value.tv_nsec = Offset % nsInS;
-        JobDoneTimeSpec.it_interval.tv_sec = Period / nsInS;
-        JobDoneTimeSpec.it_interval.tv_nsec = Period % nsInS;
+        JobFireTimeSpec.it_value.tv_sec = Offset / nsInS;
+        JobFireTimeSpec.it_value.tv_nsec = Offset % nsInS;
+        JobFireTimeSpec.it_interval.tv_sec = Period / nsInS;
+        JobFireTimeSpec.it_interval.tv_nsec = Period % nsInS;
     }
 
-    void TTask::Run() {
-        std::cout << "Task Started" << std::endl;
+    long long TTask::Run(long long startAt, long long endAt) {
+        Offset = startAt;
+        EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
         InitializeTimer();
         InitializeAlarmSignal();
         InitializeTimerSpec();
         TaskBody();
+        return WorstCaseExecution;
     }
 
     void TTask::TaskBody() {
-        timer_settime(JobFireTimer, TIMER_ABSTIME, &JobDoneTimeSpec, NULL);
+        timer_settime(JobFireTimer, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
+
+        WorstCaseExecution = -1;
 
         while (true) {
             WaitForNextActivation();
-            auto start = std::chrono::high_resolution_clock::now();
+            auto start = std::chrono::high_resolution_clock::now();            
             JobBody();
-            auto end = std::chrono::high_resolution_clock::now();
-            std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
+            auto end = std::chrono::high_resolution_clock::now();            
+            long long execution = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+            //std::cout << execution << std::endl;
+
+            WorstCaseExecution = std::max(execution, WorstCaseExecution);
+            if (end > EndSimulation) {
+                timer_delete(JobFireTimer);
+                return;
+            }
+
         }
     }
 
@@ -74,7 +90,7 @@ namespace NRTSimulator {
 
     inline void TTask::JobBody() {
         for (long long i = 0; i < CountTo; ++i) {
-            //Just counting
+             //Just counting
         }
     }
 }
