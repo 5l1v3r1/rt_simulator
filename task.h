@@ -24,7 +24,7 @@ namespace NRTSimulator {
 		struct itimerspec JobFireTimeSpec;
 		
 	public:		
-		TTask(TRandomVar executionTime, long long  period);
+		TTask(const TRandomVar & executionTime, long long  period);
 		long long Run(long long startAt, long long endAt);
 		virtual ~TTask();
 	protected:
@@ -46,7 +46,7 @@ namespace NRTSimulator {
 	private:
 		const double ConvertRate = 6; //ConvertRate how many ns one "long long" addition take.
 	public:
-		TCountingTask(TRandomVar executionTime, long long  period);
+		TCountingTask(const TRandomVar & executionTime, long long  period);
 		virtual ~TCountingTask();
 	private:
 		virtual void JobBody(long long) override;
@@ -58,7 +58,7 @@ namespace NRTSimulator {
 		timer_t JobDoneTimer;
 		struct itimerspec JobDoneTimeSpec;
 	public:
-		TTimerTask(TRandomVar executionTime, long long  period);
+		TTimerTask(const TRandomVar & executionTime, long long  period);
 		virtual ~TTimerTask();
 	protected:
 		virtual void Initialize() override;

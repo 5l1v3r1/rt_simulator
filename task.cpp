@@ -16,7 +16,7 @@
 
 namespace NRTSimulator {
 
-    TTask::TTask(TRandomVar executionTime, long long period)
+    TTask::TTask(const TRandomVar & executionTime, long long period)
         : ExecutionTime(executionTime)
         , Period(period)
     {
@@ -91,7 +91,7 @@ namespace NRTSimulator {
     }
 
 
-    TCountingTask::TCountingTask(TRandomVar executionTime, long long period) 
+    TCountingTask::TCountingTask(const TRandomVar & executionTime, long long period) 
         : TTask(executionTime, period)
     {}
 
@@ -104,7 +104,7 @@ namespace NRTSimulator {
 
     TCountingTask::~TCountingTask() {}
 
-    TTimerTask::TTimerTask(TRandomVar executionTime, long long period)
+    TTimerTask::TTimerTask(const TRandomVar & executionTime, long long period)
         : TTask(executionTime, period)
     {
     }
