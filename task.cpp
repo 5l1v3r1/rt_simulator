@@ -16,20 +16,17 @@
 
 namespace NRTSimulator {
 
-
-    TTask::TTask(TRandomVar executionTime, long long period, double convertRate)
+    TTask::TTask(TRandomVar executionTime, long long period)
         : ExecutionTime(executionTime)
         , Period(period)
-        , ConvertRate(convertRate)
     {
-
     }
 
     TTask::~TTask() {
         timer_delete(JobFireTimer);
     }
 
-    void TTask::InitializeTimer() {
+    void TTask::InitializeFireTimer() {
         struct sigevent jobFireEvent;
         memset(&jobFireEvent, 0, sizeof(struct sigevent));
         jobFireEvent.sigev_notify = SIGEV_SIGNAL;
@@ -37,13 +34,13 @@ namespace NRTSimulator {
         timer_create(CLOCK_REALTIME, &jobFireEvent, &JobFireTimer);
     }
 
-    void TTask::InitializeAlarmSignal() {
+    void TTask::InitializeFireAlarmSignal() {
         sigemptyset(&AlarmSignal);
         sigaddset(&AlarmSignal, SIGALRM);
         sigprocmask(SIG_BLOCK, &AlarmSignal, NULL);
     }
 
-    void TTask::InitializeTimerSpec() {
+    void TTask::InitializeFireTimerSpec() {
         long long nsInS = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
         JobFireTimeSpec.it_value.tv_sec = Offset / nsInS;
         JobFireTimeSpec.it_value.tv_nsec = Offset % nsInS;
@@ -51,31 +48,35 @@ namespace NRTSimulator {
         JobFireTimeSpec.it_interval.tv_nsec = Period % nsInS;
     }
 
+    void TTask::Initialize() {
+        InitializeFireTimer();
+        InitializeFireAlarmSignal();
+        InitializeFireTimerSpec();
+    }
+
     long long TTask::Run(long long startAt, long long endAt) {
         Offset = startAt;
         EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
-        InitializeTimer();
-        InitializeAlarmSignal();
-        InitializeTimerSpec();
+        Initialize();
         TaskBody();
-        return WorstCaseExecution;
+        return WorstCaseResponce;
     }
 
     void TTask::TaskBody() {
         timer_settime(JobFireTimer, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
 
-        WorstCaseExecution = -1;
+        WorstCaseResponce = -1;
 
         while (true) {
             WaitForNextActivation();
-            CountTo = ExecutionTime.Sample() / ConvertRate;
+            long long executionTime = ExecutionTime.Sample();
             auto start = std::chrono::high_resolution_clock::now();            
-            JobBody();
+            JobBody(executionTime);
             auto end = std::chrono::high_resolution_clock::now();            
-            long long execution = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-            //std::cout << execution << std::endl;
+            long long responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+            std::cout << responceTime << std::endl;
 
-            WorstCaseExecution = std::max(execution, WorstCaseExecution);
+            WorstCaseResponce = std::max(responceTime, WorstCaseResponce);
             if (end > EndSimulation) {
                 timer_delete(JobFireTimer);
                 return;
@@ -84,15 +85,70 @@ namespace NRTSimulator {
         }
     }
 
-
     void TTask::WaitForNextActivation() {
         int dummy;
         sigwait(&AlarmSignal, &dummy);
     }
 
-    inline void TTask::JobBody() {
-        for (long long i = 0; i < CountTo; ++i) {
-             //Just counting
+
+    TCountingTask::TCountingTask(TRandomVar executionTime, long long period) 
+        : TTask(executionTime, period)
+    {}
+
+    void TCountingTask::JobBody(long long executionTime) {
+        long long countTo = executionTime / ConvertRate;
+        for (long long i = 0; i < countTo; ++i) {
+              //Just counting
         }
+    }
+
+    TCountingTask::~TCountingTask() {}
+
+    TTimerTask::TTimerTask(TRandomVar executionTime, long long period)
+        : TTask(executionTime, period)
+    {
+    }
+
+    void TTimerTask::Initialize() {
+        TTask::Initialize();
+        InitializeDoneTimer();
+        InitializeDoneTimerSpec();
+    }
+
+    void TTimerTask::InitializeDoneTimer() {
+        struct sigevent jobDoneEvent;
+        memset(&jobDoneEvent, 0, sizeof(struct sigevent));
+        jobDoneEvent.sigev_notify = SIGEV_NONE;
+        jobDoneEvent.sigev_signo = SIGALRM;
+
+        if (timer_create(CLOCK_PROCESS_CPUTIME_ID, &jobDoneEvent, &JobDoneTimer) == -1) {
+            std::cout << "Can`t create timer" << std::endl;
+        }
+    }
+
+    void TTimerTask::InitializeDoneTimerSpec() {
+        JobDoneTimeSpec.it_value.tv_sec = 0;
+        JobDoneTimeSpec.it_value.tv_nsec = 0;
+        JobDoneTimeSpec.it_interval.tv_sec = 0;
+        JobDoneTimeSpec.it_interval.tv_nsec = 0;
+    }
+
+    void TTimerTask::JobBody(long long executionTime) {
+        JobDoneTimeSpec.it_value.tv_sec = executionTime / 1000000000;
+        JobDoneTimeSpec.it_value.tv_nsec = executionTime % 1000000000;
+
+        timer_settime(JobDoneTimer, 0, &JobDoneTimeSpec, NULL);
+
+        struct itimerspec spec;
+        timer_gettime(JobDoneTimer, &spec);
+
+        while (spec.it_value.tv_nsec != 0 || spec.it_value.tv_sec != 0) { 
+            timer_gettime(JobDoneTimer, &spec);
+        }
+    }
+
+
+    TTimerTask::~TTimerTask() {
+        timer_delete(JobDoneTimer);
     }
 }

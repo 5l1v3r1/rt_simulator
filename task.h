@@ -13,32 +13,60 @@ namespace NRTSimulator {
 	private:
 		TRandomVar ExecutionTime;
 		long long Period;
-		double ConvertRate;
-			
-		long long CountTo;
 
 		long long Offset;
 		std::chrono::time_point<std::chrono::high_resolution_clock> EndSimulation;
 
-		long long WorstCaseExecution;
+		long long WorstCaseResponce;
 
 		timer_t JobFireTimer;
 		sigset_t AlarmSignal;
 		struct itimerspec JobFireTimeSpec;
-	public:
-		//ConvertRate how many ns one "long long" addition take.
-		TTask(TRandomVar executionTime, long long  period,  double convertRate);
+		
+	public:		
+		TTask(TRandomVar executionTime, long long  period);
 		long long Run(long long startAt, long long endAt);
-		~TTask();
+		virtual ~TTask();
+	protected:
+		virtual void Initialize();
 	private:
-		void InitializeTimer();
-		void InitializeAlarmSignal();
+		void InitializeFireTimer();
+		void InitializeFireAlarmSignal();
+		void InitializeFireTimerSpec();
 
-		void InitializeTimerSpec();
 		void TaskBody();
 
 		void WaitForNextActivation();
-		void JobBody();	
+		
+		virtual void JobBody(long long executionTime) = 0;	
+	};
+
+	class TCountingTask : public TTask
+	{
+	private:
+		const double ConvertRate = 6; //ConvertRate how many ns one "long long" addition take.
+	public:
+		TCountingTask(TRandomVar executionTime, long long  period);
+		virtual ~TCountingTask();
+	private:
+		virtual void JobBody(long long) override;
+	};
+
+	class TTimerTask : public TTask
+	{
+	private:
+		timer_t JobDoneTimer;
+		struct itimerspec JobDoneTimeSpec;
+	public:
+		TTimerTask(TRandomVar executionTime, long long  period);
+		virtual ~TTimerTask();
+	protected:
+		virtual void Initialize() override;
+	private:
+		virtual void JobBody(long long) override;
+		
+		void InitializeDoneTimer();
+		void InitializeDoneTimerSpec();
 	};
 
 }
