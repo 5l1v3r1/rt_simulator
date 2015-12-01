@@ -7,8 +7,8 @@ SIMULATOR=simulator
 SOURCE_TASK=task_main.cpp task.cpp random_var.cpp task_arg_parser.cpp
 HEADERS_TASK=task.h random_var.h task_arg_parser.h
 
-SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp
-HEADERS_SIMULATOR=tasks_file_parser.h
+SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp rta.cpp
+HEADERS_SIMULATOR=tasks_file_parser.h rta.h
 
 all: $(TASK) $(SIMULATOR)
 

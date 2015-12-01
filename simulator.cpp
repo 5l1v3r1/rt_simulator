@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "tasks_file_parser.h"
+#include "rta.h"
 
 
 namespace NRTSimulator {
@@ -63,18 +64,29 @@ int main(int argc, char *argv[])
     int executionTime = 5;
     std::ifstream taskSpecFile("task_spec.txt");
     std::vector<NRTSimulator::TTaskSpec> taskSpecs = NRTSimulator::TTaskFileParser().Parse(taskSpecFile);
-
-
     taskSpecFile.close();
+
+    std::cout << "Responce time analysis..." << std::endl;
+
+    NRTSimulator::TRTA rta(taskSpecs);
+    rta.Compute();
+
+    for (size_t taskNumber = 0; taskNumber < taskSpecs.size(); ++ taskNumber) {
+        if (rta.CheckIsShedulable(taskNumber)) {
+            std::cout << taskSpecs[taskNumber].Name << ": worst case responce time " 
+                << rta.GetWorstCaseResponceTime(taskNumber) << std::endl;            
+        } else {
+            std::cout << taskSpecs[taskNumber].Name << ": is not schedulable" << std::endl;
+        }
+    }
+
+    std::cout << "Simulation..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now() + TASK_OFFSET;
-    auto end = start + std::chrono::seconds(executionTime);
-    
+    auto end = start + std::chrono::seconds(executionTime);    
     for (const auto & taskSpec: taskSpecs) {
         NRTSimulator::runTask(taskSpec, start, end);
     }
     
-    std::cout << "All tasks started." << std::endl;
-
     int dummy;
     for (size_t proceesNumber = 0; proceesNumber < taskSpecs.size(); ++ proceesNumber) {
         wait(&dummy);
