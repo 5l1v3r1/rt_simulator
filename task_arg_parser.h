@@ -10,14 +10,15 @@ namespace NRTSimulator {
 	private:
 		std::vector<std::string> args;
 	public:
-		// CPU Priority Period Offset End CountExecutions Mass_i Execution_i
-		void Parse(int argc, char *argv[]);
+		// TaskName CPU Priority Period Offset End CountExecutions Mass_i Execution_i
+		void Parse(int argc, const char * const argv[]);
 		int GetCPU();
 		int GetPriority();
 		TRandomVar GetExecutionTime();
 		long long GetPeriod();
 		long long GetOffset();
 		long long GetEnd();
+		std::string GetTaskName();
 	private:
 		long long stringToLong(const std::string str);
 		double stringToDouble(const std::string str);

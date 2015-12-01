@@ -58,7 +58,8 @@ namespace NRTSimulator {
         Offset = startAt;
         EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
         Initialize();
-        TaskBody();
+        TaskBody();        
+        timer_delete(JobFireTimer);
         return WorstCaseResponce;
     }
 
@@ -69,16 +70,16 @@ namespace NRTSimulator {
 
         while (true) {
             WaitForNextActivation();
-            long long executionTime = ExecutionTime.Sample();
-            auto start = std::chrono::high_resolution_clock::now();            
+            auto start = std::chrono::high_resolution_clock::now();  
+            long long executionTime = ExecutionTime.Sample();                      
             JobBody(executionTime);
-            auto end = std::chrono::high_resolution_clock::now();            
+            auto end = std::chrono::high_resolution_clock::now();      
             long long responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-            std::cout << responceTime << std::endl;
+            //std::cout << responceTime << std::endl;
 
             WorstCaseResponce = std::max(responceTime, WorstCaseResponce);
+            
             if (end > EndSimulation) {
-                timer_delete(JobFireTimer);
                 return;
             }
 

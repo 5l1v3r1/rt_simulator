@@ -3,11 +3,20 @@ LDFLAGS = -pthread
 LDLIBS = -lm -lrt
 
 TASK=task
+SIMULATOR=simulator
 SOURCE_TASK=task_main.cpp task.cpp random_var.cpp task_arg_parser.cpp
 HEADERS_TASK=task.h random_var.h task_arg_parser.h
 
-all: $(SOURCE_TASK) $(HEADERS_TASK)
+SOURCE_SIMULATOR=simulator.cpp
+HEADERS_SIMULATOR=simulator_arg_parser.h
+
+all: $(TASK) $(SIMULATOR)
+
+$(TASK): $(SOURCE_TASK) $(HEADERS_TASK)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SOURCE_TASK) $(LDLIBS) -o $(TASK)
 
+$(SIMULATOR): $(SOURCE_SIMULATOR) $(HEADERS_SIMULATOR)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SOURCE_SIMULATOR) $(LDLIBS) -o $(SIMULATOR)
+
 clean:
-	rm -f *.d *.o $(TASK)
+	rm -f *.d *.o $(TASK) $(SIMULATOR)

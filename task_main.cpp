@@ -18,7 +18,8 @@ namespace NRTSimulator {
 		struct sched_param param;
 		param.sched_priority = priority;
 		if (sched_setscheduler(0, SCHED_FIFO, &param)) {
-			std::cout << "Failed to set RT priority." << std::endl;
+			std::cerr << "Failed to set RT priority." << std::endl;
+			exit(-1);  
 		}
 	}
 
@@ -28,54 +29,24 @@ namespace NRTSimulator {
         CPU_SET(cpu, &set);
 
         if (sched_setaffinity(0, sizeof(set), &set) == -1) {
-        	std::cout << "Failed to set cpu." << std::endl;
+        	std::cerr << "Failed to set cpu." << std::endl;
+        	exit(-1);
         }            
 	}
 }
 
 
-int main(int argc, char *argv[])
-{
-	//TODO: set process affinity
-	//TODO: remove this part
-	const int arg_count = 16;
-	char * args[arg_count];
-	for (int i = 0; i < arg_count; ++i) {
-		args[i] = new char[255];
-	}
-	strcpy(args[0], "task");
-	strcpy(args[1], "0");
-	strcpy(args[2], "80");
-	strcpy(args[3], "100000000");
-	std::stringstream s;
-	s << std::chrono::duration_cast<std::chrono::nanoseconds>
-					((std::chrono::high_resolution_clock::now() + std::chrono::seconds(2)).time_since_epoch()).count();
-	strcpy(args[4], s.str().c_str());
-	std::stringstream e;
-	e << std::chrono::duration_cast<std::chrono::nanoseconds>
-					((std::chrono::high_resolution_clock::now() + std::chrono::seconds(7)).time_since_epoch()).count();
-	strcpy(args[5], e.str().c_str());
-
-	strcpy(args[6], "4");
-	strcpy(args[7], "0.1");
-	strcpy(args[8], "10000000");
-	strcpy(args[9], "0.4");
-	strcpy(args[10], "20000000");
-	strcpy(args[11], "0.2");
-	strcpy(args[12], "30000000");
-	strcpy(args[13], "0.3");
-	strcpy(args[14], "40000000");
-
-	//////////////////////////////
-
-
+int main(int argc, char *argv[]) {	
 	NRTSimulator::TTaskArgParser parser;
-	parser.Parse(arg_count, args);
+	parser.Parse(argc, argv);
 
-	std::unique_ptr<NRTSimulator::TTask> task(new NRTSimulator::TTimerTask(parser.GetExecutionTime(), parser.GetPeriod()));
+	std::unique_ptr<NRTSimulator::TTask> task(new NRTSimulator::TCountingTask(parser.GetExecutionTime(), parser.GetPeriod()));
 
 	NRTSimulator::setRealtimePriority(parser.GetPriority());
 	NRTSimulator::setAffinity(parser.GetCPU());
 
-	std::cout << "Worst case execution time: " << task->Run(parser.GetOffset(), parser.GetEnd()) << std::endl;
+	std::cout << "Worst case responce time of " << parser.GetTaskName() << ": "
+			  << task->Run(parser.GetOffset(), parser.GetEnd()) << std::endl;
+
+	return 0;
 }
