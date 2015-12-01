@@ -44,10 +44,11 @@ namespace NRTSimulator {
     }
 
     void TTask::InitializeFireTimerSpec() {
-        JobFireTimeSpec.it_value.tv_sec = Offset / NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobFireTimeSpec.it_value.tv_nsec = Offset % NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobFireTimeSpec.it_interval.tv_sec = Period / NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobFireTimeSpec.it_interval.tv_nsec = Period % NUMBER_OF_NANOSECONDS_IN_SECOND;
+        long long offsetNanosecond = std::chrono::nanoseconds(StartSimulation.time_since_epoch()).count();
+        JobFireTimeSpec.it_value.tv_sec = offsetNanosecond / NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.it_value.tv_nsec = offsetNanosecond % NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.it_interval.tv_sec = Period.count() / NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.it_interval.tv_nsec = Period.count() % NUMBER_OF_NANOSECONDS_IN_SECOND;
     }
 
     void TTask::Initialize() {
@@ -56,8 +57,8 @@ namespace NRTSimulator {
         InitializeFireTimerSpec();
     }
 
-    long long TTask::Run(long long startAt, long long endAt) {
-        Offset = startAt;
+    std::chrono::nanoseconds TTask::Run(long long startAt, long long endAt) {
+        StartSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(startAt));
         EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
         Initialize();
         TaskBody();        
@@ -68,23 +69,23 @@ namespace NRTSimulator {
     void TTask::TaskBody() {
         timer_settime(JobFireTimer, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
 
-        WorstCaseResponce = -1;
+        WorstCaseResponce = std::chrono::nanoseconds(0);
 
+        std::chrono::time_point<std::chrono::high_resolution_clock> taskFired (StartSimulation);
         while (true) {
-            WaitForNextActivation();
-            auto start = std::chrono::high_resolution_clock::now();  
+            WaitForNextActivation();             
             long long executionTime = ExecutionTime.Sample();                      
             JobBody(executionTime);
-            auto end = std::chrono::high_resolution_clock::now();      
-            long long responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+            auto taskProcessed = std::chrono::high_resolution_clock::now();    
+            auto responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(taskProcessed - taskFired);
             //std::cout << responceTime << std::endl;
 
             WorstCaseResponce = std::max(responceTime, WorstCaseResponce);
             
-            if (end > EndSimulation) {
+            if (taskProcessed > EndSimulation) {
                 return;
             }
-
+            taskFired += Period;
         }
     }
 

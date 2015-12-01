@@ -46,6 +46,6 @@ int main(int argc, char *argv[]) {
 	NRTSimulator::setAffinity(parser.GetCPU(), parser.GetTaskName());
 
 	std::cout << parser.GetTaskName() << ": worst case responce time " <<
-				 task->Run(parser.GetOffset(), parser.GetEnd()) << std::endl;
+				 task->Run(parser.GetOffset(), parser.GetEnd()).count() << std::endl;
 	return 0;
 }

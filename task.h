@@ -12,12 +12,12 @@ namespace NRTSimulator {
 	{
 	private:
 		TRandomVar ExecutionTime;
-		long long Period;
+		std::chrono::nanoseconds Period;
 
-		long long Offset;
+		std::chrono::time_point<std::chrono::high_resolution_clock> StartSimulation;
 		std::chrono::time_point<std::chrono::high_resolution_clock> EndSimulation;
 
-		long long WorstCaseResponce;
+		std::chrono::nanoseconds WorstCaseResponce;
 
 		timer_t JobFireTimer;
 		sigset_t AlarmSignal;
@@ -25,7 +25,7 @@ namespace NRTSimulator {
 		
 	public:		
 		TTask(const TRandomVar & executionTime, long long  period);
-		long long Run(long long startAt, long long endAt);
+		std::chrono::nanoseconds Run(long long startAt, long long endAt);
 		virtual ~TTask();
 	protected:
 		virtual void Initialize();
