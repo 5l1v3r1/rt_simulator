@@ -4,71 +4,81 @@
 #include <chrono>
 #include <sstream>
 #include <string.h>
+#include <vector>
+#include <fstream>
+
+#include "tasks_file_parser.h"
 
 
 namespace NRTSimulator {
-    void runTask(char * const argv[]) {
+    void runTask(const TTaskSpec & taskSpec, std::chrono::time_point<std::chrono::high_resolution_clock> start,
+            std::chrono::time_point<std::chrono::high_resolution_clock> end) {
+        size_t argc = 8 + taskSpec.ExecutionTimeSpec.size() * 2;
+        char ** argv = new char * [argc];
+        for (size_t i = 0; i < argc; ++i) {
+            argv[i] = new char[255];
+        }
+
+        strcpy(argv[0], "task");
+        strcpy(argv[1], taskSpec.Name.c_str());
+        strcpy(argv[2], std::to_string(taskSpec.CPU).c_str());
+        strcpy(argv[3], std::to_string(taskSpec.Priority).c_str());
+        strcpy(argv[4], std::to_string(taskSpec.Period).c_str());
+        strcpy(argv[5], std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>
+                                        (start.time_since_epoch()).count()).c_str());
+        strcpy(argv[6], std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>
+                                        (end.time_since_epoch()).count()).c_str());
+        strcpy(argv[7], std::to_string(taskSpec.ExecutionTimeSpec.size()).c_str());
+
+        for (size_t massNumber = 0; massNumber < taskSpec.ExecutionTimeSpec.size(); ++massNumber) {
+            strcpy(argv[8 + 2 * massNumber], std::to_string(taskSpec.ExecutionTimeSpec[massNumber].first).c_str());
+            strcpy(argv[9 + 2 * massNumber], std::to_string(taskSpec.ExecutionTimeSpec[massNumber].second).c_str());
+        }
+
     	int child = fork();
 	    if (child < 0) {
-	        std::cerr << "Can`t run task." << std::endl;
+	        std::cerr << taskSpec.Name << ": can`t create new process." << std::endl;
 	        exit(-1);
 	    }
 	    if (child == 0) {
 	        int res = execve("./task", argv, NULL);
 	        if (res < 0) {
-		        std::cerr << "Error can`t run task" << std::endl;
+		        std::cerr << taskSpec.Name << "Error can`t run task" << std::endl;
 		        exit(-1);
 	    	}
 	    }
+        
+
+        for (size_t i = 0; i < argc; ++i) {
+            delete [] argv[i];
+        }
+        delete [] argv;
     }
+
 }
 
+const std::chrono::seconds TASK_OFFSET(2);
 int main(int argc, char *argv[])
-{
-    //TODO: remove this part
-    const int arg_count = 16;
-    char * args[arg_count];
-    for (int i = 0; i < arg_count; ++i) {
-        args[i] = new char[255];
+{   
+    int executionTime = 5;
+    std::ifstream taskSpecFile("task_spec.txt");
+    std::vector<NRTSimulator::TTaskSpec> taskSpecs = NRTSimulator::TTaskFileParser().Parse(taskSpecFile);
+
+
+    taskSpecFile.close();
+    auto start = std::chrono::high_resolution_clock::now() + TASK_OFFSET;
+    auto end = start + std::chrono::seconds(executionTime);
+    
+    for (const auto & taskSpec: taskSpecs) {
+        NRTSimulator::runTask(taskSpec, start, end);
     }
-    strcpy(args[0], "task");
-    strcpy(args[1], "T1");
-    strcpy(args[2], "0");
-    strcpy(args[3], "80");
-    strcpy(args[4], "40000000");
-    std::stringstream s;
-    s << std::chrono::duration_cast<std::chrono::nanoseconds>
-                    ((std::chrono::high_resolution_clock::now() + std::chrono::seconds(2)).time_since_epoch()).count();
-    strcpy(args[5], s.str().c_str());
-    std::stringstream e;
-    e << std::chrono::duration_cast<std::chrono::nanoseconds>
-                    ((std::chrono::high_resolution_clock::now() + std::chrono::seconds(62)).time_since_epoch()).count();
-    strcpy(args[6], e.str().c_str());
-
-    strcpy(args[7], "4");
-    strcpy(args[8], "0.1");
-    strcpy(args[9], "10000000");
-    strcpy(args[10], "0.4");
-    strcpy(args[11], "10000000");
-    strcpy(args[12], "0.2");
-    strcpy(args[13], "10000000");
-    strcpy(args[14], "0.3");
-    strcpy(args[15], "10000000");
-
-    //////////////////////////////
-
-    NRTSimulator::runTask(args);
-    strcpy(args[1], "T2");
-    strcpy(args[3], "81");
-    NRTSimulator::runTask(args);
-    strcpy(args[1], "T3");
-    strcpy(args[3], "82");
-    NRTSimulator::runTask(args);
+    
+    std::cout << "All tasks started." << std::endl;
 
     int dummy;
-    wait(&dummy);
-    wait(&dummy);
-    wait(&dummy);
+    for (size_t proceesNumber = 0; proceesNumber < taskSpecs.size(); ++ proceesNumber) {
+        wait(&dummy);
+    }
 
     return 0;
 }
