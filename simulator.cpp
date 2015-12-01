@@ -6,6 +6,7 @@
 #include <string.h>
 #include <vector>
 #include <fstream>
+#include <getopt.h>
 
 #include "tasks_file_parser.h"
 #include "rta.h"
@@ -56,13 +57,47 @@ namespace NRTSimulator {
         delete [] argv;
     }
 
+    void parseCommandLineArgs(int argc,char * argv[], std::string & filename, int & simulationTime) {
+        const std::string USAGE("Usage: simulator -f str -s num.\n");
+
+        static struct option long_options[] = {
+            {"file",    required_argument, 0, 'f'},
+            {"simtime", required_argument, 0, 's'},
+            {0, 0, 0,  0}
+        };
+
+        int long_index = 0;
+        int opt = 0;   
+        while ((opt = getopt_long(argc, argv,"f:s:", long_options, &long_index )) != -1) {
+            switch (opt) {
+                case 'f' : 
+                    filename = std::string(optarg);
+                    break;
+                case 's' :
+                    simulationTime = std::stoll(optarg);
+                    break;
+                default: 
+                    std::cout << USAGE << std::endl;
+                    exit(-1);
+            }
+        }
+
+        if (filename.empty() || simulationTime == 0) {
+            std::cout << USAGE << std::endl;
+            exit(-1);
+        }
+    }
 }
 
 const std::chrono::seconds TASK_OFFSET(2);
 int main(int argc, char *argv[])
 {   
-    int executionTime = 5;
-    std::ifstream taskSpecFile("task_spec.txt");
+    int simulationTime = 0;
+    std::string filename;
+
+    NRTSimulator::parseCommandLineArgs(argc, argv, filename, simulationTime);
+
+    std::ifstream taskSpecFile(filename);
     std::vector<NRTSimulator::TTaskSpec> taskSpecs = NRTSimulator::TTaskFileParser().Parse(taskSpecFile);
     taskSpecFile.close();
 
@@ -82,7 +117,7 @@ int main(int argc, char *argv[])
 
     std::cout << "Simulation..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now() + TASK_OFFSET;
-    auto end = start + std::chrono::seconds(executionTime);    
+    auto end = start + std::chrono::seconds(simulationTime);    
     for (const auto & taskSpec: taskSpecs) {
         NRTSimulator::runTask(taskSpec, start, end);
     }
