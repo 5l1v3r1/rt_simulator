@@ -16,6 +16,9 @@
 
 namespace NRTSimulator {
 
+    const long long NUMBER_OF_NANOSECONDS_IN_SECOND = 
+            std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
+
     TTask::TTask(const TRandomVar & executionTime, long long period)
         : ExecutionTime(executionTime)
         , Period(period)
@@ -41,11 +44,10 @@ namespace NRTSimulator {
     }
 
     void TTask::InitializeFireTimerSpec() {
-        long long nsInS = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
-        JobFireTimeSpec.it_value.tv_sec = Offset / nsInS;
-        JobFireTimeSpec.it_value.tv_nsec = Offset % nsInS;
-        JobFireTimeSpec.it_interval.tv_sec = Period / nsInS;
-        JobFireTimeSpec.it_interval.tv_nsec = Period % nsInS;
+        JobFireTimeSpec.it_value.tv_sec = Offset / NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.it_value.tv_nsec = Offset % NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.it_interval.tv_sec = Period / NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.it_interval.tv_nsec = Period % NUMBER_OF_NANOSECONDS_IN_SECOND;
     }
 
     void TTask::Initialize() {
@@ -135,8 +137,8 @@ namespace NRTSimulator {
     }
 
     void TTimerTask::JobBody(long long executionTime) {
-        JobDoneTimeSpec.it_value.tv_sec = executionTime / 1000000000;
-        JobDoneTimeSpec.it_value.tv_nsec = executionTime % 1000000000;
+        JobDoneTimeSpec.it_value.tv_sec = executionTime / NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobDoneTimeSpec.it_value.tv_nsec = executionTime % NUMBER_OF_NANOSECONDS_IN_SECOND;
 
         timer_settime(JobDoneTimer, 0, &JobDoneTimeSpec, NULL);
 

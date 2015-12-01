@@ -18,9 +18,6 @@ namespace NRTSimulator {
 		long long GetPeriod();
 		long long GetOffset();
 		long long GetEnd();
-		std::string GetTaskName();
-	private:
-		long long stringToLong(const std::string str);
-		double stringToDouble(const std::string str);
+		const std::string & GetTaskName();
 	};
 }
