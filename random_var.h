@@ -19,5 +19,6 @@ namespace NRTSimulator {
 	public:		
 		TRandomVar(const std::vector<double> & mass, const vector<long long> & values);
 		long long Sample();
+		long long GetMaxValue() const;
 	};
 }

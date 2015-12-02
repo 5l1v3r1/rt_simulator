@@ -3,16 +3,11 @@
 #include <string>
 #include <utility>
 #include <istream>
+#include <memory>
+
+#include "task.h"
 
 namespace NRTSimulator {
-	struct TTaskSpec {
-		std::vector<std::pair<double, long long>> ExecutionTimeSpec;
-		long long Period;
-		int CPU;
-		int Priority;
-		std::string Name;		
-	};
-
 	class TTaskFileParser {
 	public:
 		/*
@@ -27,6 +22,6 @@ namespace NRTSimulator {
 		* Taks_2_Name
 		* ...
 		*/
-		std::vector<TTaskSpec> Parse(std::istream &);
+		std::vector<std::shared_ptr<TTask>> Parse(std::istream &);
 	};
 }

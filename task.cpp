@@ -16,17 +16,61 @@
 
 namespace NRTSimulator {
 
-    const long long NUMBER_OF_NANOSECONDS_IN_SECOND = 
+    static const long long NUMBER_OF_NANOSECONDS_IN_SECOND = 
             std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
 
-    TTask::TTask(const TRandomVar & executionTime, long long period)
+    TTask::TTask(const TRandomVar & executionTime, long long period,
+                 int cpu, int priority, const std::string & name)
         : ExecutionTime(executionTime)
         , Period(period)
+        , CPU(cpu)
+        , Priority(priority)
+        , Name(name)
     {
     }
 
     TTask::~TTask() {
         timer_delete(JobFireTimer);
+    }
+
+    void TTask::SetUpPriority() {
+        struct sched_param param;
+        param.sched_priority = Priority;
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param)) {
+            std::cerr << Name << ": failed to set RT priority." << std::endl;
+            exit(-1);  
+        }
+    }
+
+    void TTask::SetUpCPU() {
+        cpu_set_t set;
+        CPU_ZERO(&set);
+        CPU_SET(CPU, &set);
+
+        if (pthread_setaffinity_np(pthread_self(), sizeof(set), &set) == -1) {
+            std::cerr << Name << ": failed to set cpu." << std::endl;
+            exit(-1);
+        } 
+    }
+
+    long long TTask::GetPeriod() const {
+        return Period.count();
+    }
+
+    int TTask::GetCpu() const {
+        return CPU;
+    }
+    int TTask::GetPriority() const {
+        return Priority;
+    }
+    long long TTask::GetWorstCaseExecutionTime() const {
+        return ExecutionTime.GetMaxValue();
+    }
+    const std::string & TTask::GetName() const {
+        return Name;
+    }
+    long long TTask::GetWorstCaseResponceTime() const {
+        return WorstCaseResponce.count();
     }
 
     void TTask::InitializeFireTimer() {
@@ -40,63 +84,55 @@ namespace NRTSimulator {
     void TTask::InitializeFireAlarmSignal() {
         sigemptyset(&AlarmSignal);
         sigaddset(&AlarmSignal, SIGALRM);
-        sigprocmask(SIG_BLOCK, &AlarmSignal, NULL);
+        pthread_sigmask(SIG_BLOCK, &AlarmSignal, NULL);
     }
 
-    void TTask::InitializeFireTimerSpec() {
-        long long offsetNanosecond = std::chrono::nanoseconds(StartSimulation.time_since_epoch()).count();
-        JobFireTimeSpec.it_value.tv_sec = offsetNanosecond / NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobFireTimeSpec.it_value.tv_nsec = offsetNanosecond % NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobFireTimeSpec.it_interval.tv_sec = Period.count() / NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobFireTimeSpec.it_interval.tv_nsec = Period.count() % NUMBER_OF_NANOSECONDS_IN_SECOND;
+    void TTask::ComputeFireTimerSpec() {
+        long long offsetNanosecond = std::chrono::nanoseconds(NextTaskFire.time_since_epoch()).count();
+        JobFireTimeSpec.tv_sec = offsetNanosecond / NUMBER_OF_NANOSECONDS_IN_SECOND;
+        JobFireTimeSpec.tv_nsec = offsetNanosecond % NUMBER_OF_NANOSECONDS_IN_SECOND;
     }
 
     void TTask::Initialize() {
         InitializeFireTimer();
         InitializeFireAlarmSignal();
-        InitializeFireTimerSpec();
     }
 
-    std::chrono::nanoseconds TTask::Run(long long startAt, long long endAt) {
-        StartSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(startAt));
+    void TTask::Run(long long startAt, long long endAt) {
+        NextTaskFire = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(startAt));
         EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
+        WorstCaseResponce = std::chrono::nanoseconds(0);
+        SetUpPriority();
+        SetUpCPU();
         Initialize();
         TaskBody();        
         timer_delete(JobFireTimer);
-        return WorstCaseResponce;
     }
 
-    void TTask::TaskBody() {
-        timer_settime(JobFireTimer, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
-
-        WorstCaseResponce = std::chrono::nanoseconds(0);
-
-        std::chrono::time_point<std::chrono::high_resolution_clock> taskFired (StartSimulation);
-        while (true) {
+    void TTask::TaskBody() {         
+        while (NextTaskFire < EndSimulation) {
             WaitForNextActivation();             
             long long executionTime = ExecutionTime.Sample();                      
             JobBody(executionTime);
             auto taskProcessed = std::chrono::high_resolution_clock::now();    
-            auto responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(taskProcessed - taskFired);
-            //std::cout << responceTime << std::endl;
+            auto responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(taskProcessed - NextTaskFire);
+            //std::cout << responceTime.count() << std::endl;
 
             WorstCaseResponce = std::max(responceTime, WorstCaseResponce);
             
-            if (taskProcessed > EndSimulation) {
-                return;
-            }
-            taskFired += Period;
+            NextTaskFire += Period;
         }
     }
 
     void TTask::WaitForNextActivation() {
-        int dummy;
-        sigwait(&AlarmSignal, &dummy);
+        ComputeFireTimerSpec();
+        clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
     }
 
 
-    TCountingTask::TCountingTask(const TRandomVar & executionTime, long long period) 
-        : TTask(executionTime, period)
+    TCountingTask::TCountingTask(const TRandomVar & executionTime, long long period, 
+                                 int cpu, int priority, const std::string & name)
+        : TTask(executionTime, period, cpu, priority, name)
     {}
 
     void TCountingTask::JobBody(long long executionTime) {
@@ -108,8 +144,9 @@ namespace NRTSimulator {
 
     TCountingTask::~TCountingTask() {}
 
-    TTimerTask::TTimerTask(const TRandomVar & executionTime, long long period)
-        : TTask(executionTime, period)
+    TTimerTask::TTimerTask(const TRandomVar & executionTime, long long period, 
+                                 int cpu, int priority, const std::string & name)
+        : TTask(executionTime, period, cpu, priority, name)
     {
     }
 
@@ -123,9 +160,8 @@ namespace NRTSimulator {
         struct sigevent jobDoneEvent;
         memset(&jobDoneEvent, 0, sizeof(struct sigevent));
         jobDoneEvent.sigev_notify = SIGEV_NONE;
-        jobDoneEvent.sigev_signo = SIGALRM;
 
-        if (timer_create(CLOCK_PROCESS_CPUTIME_ID, &jobDoneEvent, &JobDoneTimer) == -1) {
+        if (timer_create(CLOCK_THREAD_CPUTIME_ID, &jobDoneEvent, &JobDoneTimer) == -1) {
             std::cout << "Can`t create timer" << std::endl;
         }
     }

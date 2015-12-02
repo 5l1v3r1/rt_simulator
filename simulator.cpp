@@ -13,48 +13,18 @@
 
 
 namespace NRTSimulator {
-    void runTask(const TTaskSpec & taskSpec, std::chrono::time_point<std::chrono::high_resolution_clock> start,
-            std::chrono::time_point<std::chrono::high_resolution_clock> end) {
-        size_t argc = 8 + taskSpec.ExecutionTimeSpec.size() * 2;
-        char ** argv = new char * [argc];
-        for (size_t i = 0; i < argc; ++i) {
-            argv[i] = new char[255];
-        }
+    struct TTreadParams {
+        long long Start;
+        long long End;
+        std::shared_ptr<TTask> Task;
+    };
+    static void * runTask (void * params)
+    {
+        TTreadParams * paramsTyped = (TTreadParams *)params;
 
-        strcpy(argv[0], "task");
-        strcpy(argv[1], taskSpec.Name.c_str());
-        strcpy(argv[2], std::to_string(taskSpec.CPU).c_str());
-        strcpy(argv[3], std::to_string(taskSpec.Priority).c_str());
-        strcpy(argv[4], std::to_string(taskSpec.Period).c_str());
-        strcpy(argv[5], std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>
-                                        (start.time_since_epoch()).count()).c_str());
-        strcpy(argv[6], std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>
-                                        (end.time_since_epoch()).count()).c_str());
-        strcpy(argv[7], std::to_string(taskSpec.ExecutionTimeSpec.size()).c_str());
+        paramsTyped->Task->Run(paramsTyped->Start, paramsTyped->End);
 
-        for (size_t massNumber = 0; massNumber < taskSpec.ExecutionTimeSpec.size(); ++massNumber) {
-            strcpy(argv[8 + 2 * massNumber], std::to_string(taskSpec.ExecutionTimeSpec[massNumber].first).c_str());
-            strcpy(argv[9 + 2 * massNumber], std::to_string(taskSpec.ExecutionTimeSpec[massNumber].second).c_str());
-        }
-
-    	int child = fork();
-	    if (child < 0) {
-	        std::cerr << taskSpec.Name << ": can`t create new process." << std::endl;
-	        exit(-1);
-	    }
-	    if (child == 0) {
-	        int res = execve("./task", argv, NULL);
-	        if (res < 0) {
-		        std::cerr << taskSpec.Name << "Error can`t run task" << std::endl;
-		        exit(-1);
-	    	}
-	    }
-        
-
-        for (size_t i = 0; i < argc; ++i) {
-            delete [] argv[i];
-        }
-        delete [] argv;
+        return NULL;
     }
 
     void parseCommandLineArgs(int argc,char * argv[], std::string & filename, int & simulationTime) {
@@ -91,40 +61,48 @@ namespace NRTSimulator {
 
 const std::chrono::seconds TASK_OFFSET(2);
 int main(int argc, char *argv[])
-{   
+{
     int simulationTime = 0;
     std::string filename;
 
     NRTSimulator::parseCommandLineArgs(argc, argv, filename, simulationTime);
 
     std::ifstream taskSpecFile(filename);
-    std::vector<NRTSimulator::TTaskSpec> taskSpecs = NRTSimulator::TTaskFileParser().Parse(taskSpecFile);
+    std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks = NRTSimulator::TTaskFileParser().Parse(taskSpecFile);
     taskSpecFile.close();
 
     std::cout << "Responce time analysis..." << std::endl;
 
-    NRTSimulator::TRTA rta(taskSpecs);
+    NRTSimulator::TRTA rta(tasks);
     rta.Compute();
 
-    for (size_t taskNumber = 0; taskNumber < taskSpecs.size(); ++ taskNumber) {
+    for (size_t taskNumber = 0; taskNumber < tasks.size(); ++ taskNumber) {
         if (rta.CheckIsShedulable(taskNumber)) {
-            std::cout << taskSpecs[taskNumber].Name << ": worst case responce time " 
+            std::cout << tasks[taskNumber]->GetName() << ": worst case responce time " 
                 << rta.GetWorstCaseResponceTime(taskNumber) << std::endl;            
         } else {
-            std::cout << taskSpecs[taskNumber].Name << ": is not schedulable" << std::endl;
+            std::cout << tasks[taskNumber]->GetName() << ": is not schedulable" << std::endl;
         }
     }
 
     std::cout << "Simulation..." << std::endl;
+
     auto start = std::chrono::high_resolution_clock::now() + TASK_OFFSET;
     auto end = start + std::chrono::seconds(simulationTime);    
-    for (const auto & taskSpec: taskSpecs) {
-        NRTSimulator::runTask(taskSpec, start, end);
-    }
-    
-    int dummy;
-    for (size_t proceesNumber = 0; proceesNumber < taskSpecs.size(); ++ proceesNumber) {
-        wait(&dummy);
+
+    std::vector<pthread_t> threads(tasks.size());
+    std::vector<NRTSimulator::TTreadParams> task_params(tasks.size());
+    for (size_t i = 0; i < tasks.size(); ++i) {        
+        task_params[i].Task = tasks[i];
+        task_params[i].Start = std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count();
+        task_params[i].End = std::chrono::duration_cast<std::chrono::nanoseconds>(end.time_since_epoch()).count();
+        pthread_create(&threads[i], NULL, &NRTSimulator::runTask, &task_params[i]);
+    }   
+
+    void ** dummy = NULL;
+    for (size_t i = 0; i < threads.size(); ++i) {
+        pthread_join(threads[i], dummy);
+        std::cout << tasks[i]->GetName() << ": worst case responce time " << tasks[i]->GetWorstCaseResponceTime() << std::endl;
     }
 
     return 0;

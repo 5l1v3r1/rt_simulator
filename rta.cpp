@@ -5,26 +5,22 @@
 #include "rta.h"
 
 namespace NRTSimulator {
-	TRTA::TRTA(const std::vector<TTaskSpec> & taskSpecs)
-		: WorstCaseResponceTime(taskSpecs.size(), -1)
-		, IsSchedulable(taskSpecs.size(), true)
-		, WorstCaseExecutionTime(taskSpecs.size())
-		, Period(taskSpecs.size())
-		, CPU(taskSpecs.size())
-		, Priority(taskSpecs.size())
+	TRTA::TRTA(const std::vector<std::shared_ptr<TTask>> & tasks)
+		: WorstCaseResponceTime(tasks.size(), -1)
+		, IsSchedulable(tasks.size(), true)
+		, WorstCaseExecutionTime(tasks.size())
+		, Period(tasks.size())
+		, CPU(tasks.size())
+		, Priority(tasks.size())
 	{
-		for (size_t i = 0; i < WorstCaseResponceTime.size(); ++i) {
-			WorstCaseExecutionTime[i] = std::accumulate(taskSpecs[i].ExecutionTimeSpec.begin(),
-			 	taskSpecs[i].ExecutionTimeSpec.end(), 0, [](long long accumulator, std::pair<double, long long> pair) {
-					return std::max(accumulator, pair.second);
-				});
-		}
-		std::transform(taskSpecs.begin(), taskSpecs.end(), CPU.begin(), 
-				[] (const TTaskSpec & taskSpec) {return taskSpec.CPU;});
-		std::transform(taskSpecs.begin(), taskSpecs.end(), Period.begin(),
-				[] (const TTaskSpec & taskSpec) {return taskSpec.Period;});
-		std::transform(taskSpecs.begin(), taskSpecs.end(), Priority.begin(), 
-				[] (const TTaskSpec & taskSpec) {return taskSpec.Priority;});
+		std::transform(tasks.begin(), tasks.end(), WorstCaseExecutionTime.begin(),
+				[] (const std::shared_ptr<TTask> & task) {return task->GetWorstCaseExecutionTime();});
+		std::transform(tasks.begin(), tasks.end(), CPU.begin(), 
+				[] (const std::shared_ptr<TTask> & task) {return task->GetCpu();});
+		std::transform(tasks.begin(), tasks.end(), Period.begin(),
+				[] (const std::shared_ptr<TTask> & task) {return task->GetPeriod();});
+		std::transform(tasks.begin(), tasks.end(), Priority.begin(), 
+				[] (const std::shared_ptr<TTask> & task) {return task->GetPriority();});
 	}
 	void TRTA::Compute() {
 		for (size_t taskNumber = 0; taskNumber < WorstCaseExecutionTime.size(); ++taskNumber) {

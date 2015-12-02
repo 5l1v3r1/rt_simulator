@@ -18,4 +18,8 @@ namespace NRTSimulator {
 	long long TRandomVar::Sample() {
 		return Values[Distribution(Generator)];
 	}
+
+	long long TRandomVar::GetMaxValue() const {
+		return *std::max_element(Values.begin(), Values.end());
+	}	
 }

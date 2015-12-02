@@ -13,7 +13,7 @@ namespace NRTSimulator {
 		std::vector<int> CPU;
 		std::vector<int> Priority;		
 	public:
-		TRTA(const std::vector<NRTSimulator::TTaskSpec> &);
+		TRTA(const std::vector<std::shared_ptr<TTask>> &);
 		void Compute();
 		long long GetWorstCaseResponceTime(size_t taskNumber);
 		bool CheckIsShedulable(size_t taskNumber);

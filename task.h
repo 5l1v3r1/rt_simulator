@@ -14,27 +14,43 @@ namespace NRTSimulator {
 		TRandomVar ExecutionTime;
 		std::chrono::nanoseconds Period;
 
-		std::chrono::time_point<std::chrono::high_resolution_clock> StartSimulation;
 		std::chrono::time_point<std::chrono::high_resolution_clock> EndSimulation;
+		std::chrono::time_point<std::chrono::high_resolution_clock> NextTaskFire;
 
 		std::chrono::nanoseconds WorstCaseResponce;
 
 		timer_t JobFireTimer;
 		sigset_t AlarmSignal;
-		struct itimerspec JobFireTimeSpec;
-		
+		struct timespec JobFireTimeSpec;
+
+		int CPU;
+		int Priority;
+		std::string Name;		
 	public:		
-		TTask(const TRandomVar & executionTime, long long  period);
-		std::chrono::nanoseconds Run(long long startAt, long long endAt);
+		TTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
+		void Run(long long startAt, long long endAt);
+
+		int GetCpu() const;
+		int GetPriority() const;
+		long long GetWorstCaseExecutionTime() const;
+		const std::string & GetName() const;
+		long long GetPeriod() const;
+
+		long long GetWorstCaseResponceTime() const;		
+
 		virtual ~TTask();
 	protected:
 		virtual void Initialize();
 	private:
 		void InitializeFireTimer();
 		void InitializeFireAlarmSignal();
-		void InitializeFireTimerSpec();
+		void ComputeFireTimerSpec();
 
 		void TaskBody();
+
+		void SetUpCPU();
+
+		void SetUpPriority();
 
 		void WaitForNextActivation();
 		
@@ -46,7 +62,7 @@ namespace NRTSimulator {
 	private:
 		const double ConvertRate = 6; //ConvertRate how many ns one "long long" addition take.
 	public:
-		TCountingTask(const TRandomVar & executionTime, long long  period);
+		TCountingTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		virtual ~TCountingTask();
 	private:
 		virtual void JobBody(long long) override;
@@ -58,7 +74,7 @@ namespace NRTSimulator {
 		timer_t JobDoneTimer;
 		struct itimerspec JobDoneTimeSpec;
 	public:
-		TTimerTask(const TRandomVar & executionTime, long long  period);
+		TTimerTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		virtual ~TTimerTask();
 	protected:
 		virtual void Initialize() override;
