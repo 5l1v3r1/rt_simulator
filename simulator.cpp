@@ -5,7 +5,6 @@
 #include <sstream>
 #include <string.h>
 #include <vector>
-#include <fstream>
 #include <getopt.h>
 
 #include "tasks_file_parser.h"
@@ -67,9 +66,7 @@ int main(int argc, char *argv[])
 
     NRTSimulator::parseCommandLineArgs(argc, argv, filename, simulationTime);
 
-    std::ifstream taskSpecFile(filename);
-    std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks = NRTSimulator::TTaskFileParser().Parse(taskSpecFile);
-    taskSpecFile.close();
+    std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks = NRTSimulator::TTaskFileParser().Parse(filename);
 
     std::cout << "Responce time analysis..." << std::endl;
 

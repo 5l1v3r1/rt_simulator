@@ -1,6 +1,6 @@
 CXXFLAGS = -Wall -O0 -std=c++11
 LDFLAGS = -pthread
-LDLIBS = -lm -lrt
+LDLIBS = -lm -lrt -lconfig++
 
 SIMULATOR=simulator
 

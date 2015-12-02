@@ -22,6 +22,6 @@ namespace NRTSimulator {
 		* Taks_2_Name
 		* ...
 		*/
-		std::vector<std::shared_ptr<TTask>> Parse(std::istream &);
+		std::vector<std::shared_ptr<TTask>> Parse(const std::string &);
 	};
 }
