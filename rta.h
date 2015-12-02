@@ -8,10 +8,7 @@ namespace NRTSimulator {
 	private:
 		std::vector<long long> WorstCaseResponceTime;
 		std::vector<bool> IsSchedulable;
-		std::vector<long long> WorstCaseExecutionTime;
-		std::vector<long long> Period;
-		std::vector<int> CPU;
-		std::vector<int> Priority;		
+		const std::vector<std::shared_ptr<TTask>> & Tasks;
 	public:
 		TRTA(const std::vector<std::shared_ptr<TTask>> &);
 		void Compute();

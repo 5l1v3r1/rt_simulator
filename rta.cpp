@@ -8,22 +8,11 @@ namespace NRTSimulator {
 	TRTA::TRTA(const std::vector<std::shared_ptr<TTask>> & tasks)
 		: WorstCaseResponceTime(tasks.size(), -1)
 		, IsSchedulable(tasks.size(), true)
-		, WorstCaseExecutionTime(tasks.size())
-		, Period(tasks.size())
-		, CPU(tasks.size())
-		, Priority(tasks.size())
+		, Tasks(tasks)
 	{
-		std::transform(tasks.begin(), tasks.end(), WorstCaseExecutionTime.begin(),
-				[] (const std::shared_ptr<TTask> & task) {return task->GetWorstCaseExecutionTime();});
-		std::transform(tasks.begin(), tasks.end(), CPU.begin(), 
-				[] (const std::shared_ptr<TTask> & task) {return task->GetCpu();});
-		std::transform(tasks.begin(), tasks.end(), Period.begin(),
-				[] (const std::shared_ptr<TTask> & task) {return task->GetPeriod();});
-		std::transform(tasks.begin(), tasks.end(), Priority.begin(), 
-				[] (const std::shared_ptr<TTask> & task) {return task->GetPriority();});
 	}
 	void TRTA::Compute() {
-		for (size_t taskNumber = 0; taskNumber < WorstCaseExecutionTime.size(); ++taskNumber) {
+		for (size_t taskNumber = 0; taskNumber < Tasks.size(); ++taskNumber) {
 			Compute(taskNumber);
 		}
 	}
@@ -39,21 +28,22 @@ namespace NRTSimulator {
 			return;
 		}
 		long long previousResponceTime = 0;
-		long long nextResponceTime = WorstCaseExecutionTime[taskNumber];
+		long long nextResponceTime = Tasks[taskNumber]->GetWorstCaseExecutionTime();
 
 		while (true) {
 			previousResponceTime = nextResponceTime;
-			nextResponceTime = WorstCaseExecutionTime[taskNumber];
-			for (size_t i = 0; i < WorstCaseExecutionTime.size(); ++i) {
-				if (CPU[i] == CPU[taskNumber] && Priority[i] > Priority[taskNumber]) {
+			nextResponceTime = Tasks[taskNumber]->GetWorstCaseExecutionTime();
+			for (size_t i = 0; i < Tasks.size(); ++i) {
+				if (Tasks[i]->GetCpu() == Tasks[taskNumber]->GetCpu() 
+					&& Tasks[i]->GetPriority() > Tasks[taskNumber]->GetPriority()) {
 					Compute(i);
 					if (!IsSchedulable[i]) {
 						IsSchedulable[taskNumber] = false;
 						WorstCaseResponceTime[taskNumber] = std::numeric_limits<long long>::max();
 						return;
 					}
-					nextResponceTime += 
-						std::ceil(((long double)previousResponceTime) / Period[i]) * WorstCaseExecutionTime[i];
+					nextResponceTime +=	std::ceil(((long double)previousResponceTime) / Tasks[i]->GetPeriod()) * 
+								Tasks[i]->GetWorstCaseExecutionTime();
 				}
 			}
 			if (nextResponceTime == previousResponceTime) {
@@ -61,7 +51,7 @@ namespace NRTSimulator {
 				WorstCaseResponceTime[taskNumber] = nextResponceTime;
 				return;
 			}
-			if (nextResponceTime > Period[taskNumber]) {
+			if (nextResponceTime > Tasks[taskNumber]->GetPeriod()) {
 				IsSchedulable[taskNumber] = false;
 				WorstCaseResponceTime[taskNumber] = std::numeric_limits<long long>::max();
 				return;
