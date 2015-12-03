@@ -19,13 +19,13 @@ namespace NRTSimulator {
 
 		std::chrono::nanoseconds WorstCaseResponce;
 
-		timer_t JobFireTimer;
-		sigset_t AlarmSignal;
 		struct timespec JobFireTimeSpec;
 
 		int CPU;
 		int Priority;
-		std::string Name;		
+		std::string Name;
+
+		std::vector<std::chrono::nanoseconds> ResponceTimes;	
 	public:		
 		TTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		void Run(long long startAt, long long endAt);
@@ -36,14 +36,14 @@ namespace NRTSimulator {
 		const std::string & GetName() const;
 		long long GetPeriod() const;
 
-		long long GetWorstCaseResponceTime() const;		
+		long long GetWorstCaseResponceTime() const;
+
+		std::vector<long long> GetResponceTimes() const;	
 
 		virtual ~TTask();
 	protected:
 		virtual void Initialize();
 	private:
-		void InitializeFireTimer();
-		void InitializeFireAlarmSignal();
 		void ComputeFireTimerSpec();
 
 		void TaskBody();
@@ -60,7 +60,7 @@ namespace NRTSimulator {
 	class TCountingTask : public TTask
 	{
 	private:
-		const double ConvertRate = 6; //ConvertRate how many ns one "long long" addition take.
+		const double ConvertRate = 3.69103546; //ConvertRate how many ns one "long long" addition take.
 	public:
 		TCountingTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		virtual ~TCountingTask();
@@ -71,18 +71,13 @@ namespace NRTSimulator {
 	class TTimerTask : public TTask
 	{
 	private:
-		timer_t JobDoneTimer;
-		struct itimerspec JobDoneTimeSpec;
+		struct timespec JobDoneTimeSpec;
+		struct timespec JobStartCPUClockTimeSpec;
 	public:
 		TTimerTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		virtual ~TTimerTask();
-	protected:
-		virtual void Initialize() override;
 	private:
 		virtual void JobBody(long long) override;
-		
-		void InitializeDoneTimer();
-		void InitializeDoneTimerSpec();
 	};
 
 }

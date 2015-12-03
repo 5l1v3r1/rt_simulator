@@ -6,6 +6,11 @@
 
 
 namespace NRTSimulator {
+	TTaskFileParser::TTaskFileParser(bool isTimerTasks)
+	:	IsTimerTasks(isTimerTasks)
+	{
+	}
+
 	std::vector<std::shared_ptr<TTask>> TTaskFileParser::Parse(const std::string & file) {
 		std::vector<std::shared_ptr<TTask>> result;
 
@@ -75,9 +80,15 @@ namespace NRTSimulator {
 					probMasses.push_back(mass);
 					probTimes.push_back(executionTime);
 				}
+				
+				if (IsTimerTasks) {
+					result.push_back(std::shared_ptr<TTask>
+						(new TTimerTask(TRandomVar(probMasses, probTimes), period, cpu, priority, name)));
+				} else {
+					result.push_back(std::shared_ptr<TTask>
+						(new TCountingTask(TRandomVar(probMasses, probTimes), period, cpu, priority, name)));
+				}
 
-				result.push_back(std::shared_ptr<TTask>
-					(new TTimerTask(TRandomVar(probMasses, probTimes), period, cpu, priority, name)));
 			}
 		}
 		catch(const libconfig::SettingNotFoundException &nfex) {

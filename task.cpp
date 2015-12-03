@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include <limits>
 
@@ -30,7 +31,6 @@ namespace NRTSimulator {
     }
 
     TTask::~TTask() {
-        timer_delete(JobFireTimer);
     }
 
     void TTask::SetUpPriority() {
@@ -70,21 +70,14 @@ namespace NRTSimulator {
         return Name;
     }
     long long TTask::GetWorstCaseResponceTime() const {
-        return WorstCaseResponce.count();
+        return (*std::max_element(ResponceTimes.begin(), ResponceTimes.end())).count();
     }
 
-    void TTask::InitializeFireTimer() {
-        struct sigevent jobFireEvent;
-        memset(&jobFireEvent, 0, sizeof(struct sigevent));
-        jobFireEvent.sigev_notify = SIGEV_SIGNAL;
-        jobFireEvent.sigev_signo = SIGALRM;
-        timer_create(CLOCK_REALTIME, &jobFireEvent, &JobFireTimer);
-    }
-
-    void TTask::InitializeFireAlarmSignal() {
-        sigemptyset(&AlarmSignal);
-        sigaddset(&AlarmSignal, SIGALRM);
-        pthread_sigmask(SIG_BLOCK, &AlarmSignal, NULL);
+    std::vector<long long> TTask::GetResponceTimes() const {
+        std::vector<long long> res(ResponceTimes.size());
+        std::transform(ResponceTimes.begin(), ResponceTimes.end(), res.begin(), 
+            [] (const std::chrono::nanoseconds & duration) {return duration.count();});
+        return res;
     }
 
     void TTask::ComputeFireTimerSpec() {
@@ -94,19 +87,16 @@ namespace NRTSimulator {
     }
 
     void TTask::Initialize() {
-        InitializeFireTimer();
-        InitializeFireAlarmSignal();
+        ResponceTimes.reserve((EndSimulation - NextTaskFire) / Period + 1);
+        SetUpPriority();
+        SetUpCPU();
     }
 
     void TTask::Run(long long startAt, long long endAt) {
         NextTaskFire = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(startAt));
-        EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
-        WorstCaseResponce = std::chrono::nanoseconds(0);
-        SetUpPriority();
-        SetUpCPU();
+        EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));        
         Initialize();
-        TaskBody();        
-        timer_delete(JobFireTimer);
+        TaskBody();
     }
 
     void TTask::TaskBody() {         
@@ -118,8 +108,8 @@ namespace NRTSimulator {
             auto responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>(taskProcessed - NextTaskFire);
             //std::cout << responceTime.count() << std::endl;
 
-            WorstCaseResponce = std::max(responceTime, WorstCaseResponce);
-            
+            ResponceTimes.push_back(responceTime);
+
             NextTaskFire += Period;
         }
     }
@@ -150,45 +140,21 @@ namespace NRTSimulator {
     {
     }
 
-    void TTimerTask::Initialize() {
-        TTask::Initialize();
-        InitializeDoneTimer();
-        InitializeDoneTimerSpec();
-    }
-
-    void TTimerTask::InitializeDoneTimer() {
-        struct sigevent jobDoneEvent;
-        memset(&jobDoneEvent, 0, sizeof(struct sigevent));
-        jobDoneEvent.sigev_notify = SIGEV_NONE;
-
-        if (timer_create(CLOCK_THREAD_CPUTIME_ID, &jobDoneEvent, &JobDoneTimer) == -1) {
-            std::cout << "Can`t create timer" << std::endl;
-        }
-    }
-
-    void TTimerTask::InitializeDoneTimerSpec() {
-        JobDoneTimeSpec.it_value.tv_sec = 0;
-        JobDoneTimeSpec.it_value.tv_nsec = 0;
-        JobDoneTimeSpec.it_interval.tv_sec = 0;
-        JobDoneTimeSpec.it_interval.tv_nsec = 0;
-    }
-
     void TTimerTask::JobBody(long long executionTime) {
-        JobDoneTimeSpec.it_value.tv_sec = executionTime / NUMBER_OF_NANOSECONDS_IN_SECOND;
-        JobDoneTimeSpec.it_value.tv_nsec = executionTime % NUMBER_OF_NANOSECONDS_IN_SECOND;
-
-        timer_settime(JobDoneTimer, 0, &JobDoneTimeSpec, NULL);
-
-        struct itimerspec spec;
-        timer_gettime(JobDoneTimer, &spec);
-
-        while (spec.it_value.tv_nsec != 0 || spec.it_value.tv_sec != 0) { 
-            timer_gettime(JobDoneTimer, &spec);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &JobStartCPUClockTimeSpec);
+        long long start_time = JobStartCPUClockTimeSpec.tv_sec * NUMBER_OF_NANOSECONDS_IN_SECOND +
+                                            JobStartCPUClockTimeSpec.tv_nsec;
+        while (true) { 
+            clock_gettime(CLOCK_THREAD_CPUTIME_ID, &JobDoneTimeSpec);
+            long long current_time =
+                JobDoneTimeSpec.tv_sec * NUMBER_OF_NANOSECONDS_IN_SECOND + JobDoneTimeSpec.tv_nsec;
+            if (start_time + executionTime < current_time) {
+                return;
+            }
         }
     }
 
 
     TTimerTask::~TTimerTask() {
-        timer_delete(JobDoneTimer);
     }
 }
