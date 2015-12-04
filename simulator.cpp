@@ -9,6 +9,7 @@
 #include "tasks_file_parser.h"
 #include "rta.h"
 #include "cmd_arg_parser.h"
+#include "cdf_plot.h"
 
 namespace NRTSimulator {
     struct TTreadParams {
@@ -21,27 +22,6 @@ namespace NRTSimulator {
         paramsTyped->Task->Run(paramsTyped->Start, paramsTyped->End);
         return NULL;
     }
-
-    static void plotResponceTimeHistogramm(const std::shared_ptr<TTask> task) {
-        //TODO: create class for ploting
-        std::vector<long long> responceTimes = task->GetResponceTimes();
-
-        FILE* pipehandle=popen("gnuplot -persist","w"); 
-        fprintf(pipehandle, "set term wxt title '%s Responce Time'\n", task->GetName().c_str());
-        fprintf(pipehandle, "set xlabel 'ResponceTime (ms)'\n");
-        fprintf(pipehandle, "set ylabel 'CDF'\n");
-        fprintf(pipehandle, "plot \"-\" u 1:(1./%lu) smooth cumulative\n", responceTimes.size());
-
-        
-        for (const auto & responceTime : responceTimes) {
-            std::fprintf(pipehandle, "%f\n", responceTime / 1000000.0);
-        }
-        fprintf(pipehandle, "e\n");
-        fprintf(pipehandle,"quit\n");
-        fflush(pipehandle);
-        fclose(pipehandle);
-    }
-
 }
 
 static const std::chrono::seconds TASK_OFFSET(2);
@@ -108,14 +88,16 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < threads.size(); ++i) {
         pthread_join(threads[i], dummy);
         std::cout << tasks[i]->GetName() << ": worst case responce time " << tasks[i]->GetWorstCaseResponceTime() << std::endl;
-        if (argParser.IsPlotNeeded()) {
-            NRTSimulator::plotResponceTimeHistogramm(tasks[i]);
+    }
+    if (argParser.IsPlotNeeded()) {
+        std::cout << "Ploting..." << std::endl;
+        for (const auto & task : tasks) {
+            NRTSimulator::TCDFPlot().Plot(task->GetResponceTimes(), task->GetName());
         }
     }
-
     if (argParser.IsHighKernelLatencyNeeded()) {
         std::cout << "Worst case kernell latency: " << rta.EstimateWorstCaseKernellLatency() << std::endl;
     }    
-
+    //TODO: Create class that write output (Check if directory exists in cmd_arg_parser)
     return 0;
 }
