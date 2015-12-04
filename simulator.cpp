@@ -4,12 +4,11 @@
 #include <iostream>
 #include <chrono>
 #include <sstream>
-#include <string.h>
 #include <vector>
-#include <getopt.h>
 
 #include "tasks_file_parser.h"
 #include "rta.h"
+#include "cmd_arg_parser.h"
 
 namespace NRTSimulator {
     struct TTreadParams {
@@ -21,52 +20,6 @@ namespace NRTSimulator {
         TTreadParams * paramsTyped = (TTreadParams *)params;
         paramsTyped->Task->Run(paramsTyped->Start, paramsTyped->End);
         return NULL;
-    }
-
-    static void parseCommandLineArgs(int argc,char * argv[], std::string & filename, int & simulationTime,
-        bool & counting, bool & hist) {
-        //TODO: create class for parsing command line args
-        
-        const std::string USAGE("Usage: simulator [pc] -f str -s num.\n");
-        counting = false;
-        hist = false;
-        //TODO: add kernel latency parameter, add output parameter
-        //TODO: create default for file and simtime
-        //TODO: add help argument
-        static struct option long_options[] = {
-            {"file",    required_argument, 0, 'f'},
-            {"simtime", required_argument, 0, 's'},
-            {"plot", no_argument, 0, 'p'},
-            {"counting", no_argument, 0, 'c'},
-            {0, 0, 0,  0}
-        };
-
-        int long_index = 0;
-        int opt = 0;   
-        while ((opt = getopt_long(argc, argv,"pcf:s:", long_options, &long_index )) != -1) {
-            switch (opt) {
-                case 'f' : 
-                    filename = std::string(optarg);
-                    break;
-                case 's' :
-                    simulationTime = std::stoll(optarg);
-                    break;
-                case 'c':
-                    counting = true;
-                    break;
-                case 'p':
-                    hist = true;
-                    break;
-                default: 
-                    std::cout << USAGE << std::endl;
-                    exit(-1);
-            }
-        }
-
-        if (filename.empty() || simulationTime == 0) {
-            std::cout << USAGE << std::endl;
-            exit(-1);
-        }
     }
 
     static void plotResponceTimeHistogramm(const std::shared_ptr<TTask> task) {
@@ -93,14 +46,10 @@ namespace NRTSimulator {
 
 static const std::chrono::seconds TASK_OFFSET(2);
 int main(int argc, char *argv[]) {
-    int simulationTime = 0;
-    std::string filename;
-    bool histogramm;
-    bool counting;
+    NRTSimulator::TCmdArgParser argParser(argc, argv);
 
-    NRTSimulator::parseCommandLineArgs(argc, argv, filename, simulationTime, counting, histogramm);
-
-    std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks = NRTSimulator::TTaskFileParser(!counting).Parse(filename);
+    std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks =
+         NRTSimulator::TTaskFileParser(!argParser.IsCountingUsed()).Parse(argParser.GetTaskSpecFileName());
 
     std::cout << "Responce time analysis..." << std::endl;
 
@@ -119,7 +68,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Simulation..." << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now() + TASK_OFFSET;
-    auto end = start + std::chrono::seconds(simulationTime);    
+    auto end = start + std::chrono::seconds(argParser.GetSimulationTime());    
 
     std::vector<pthread_t> threads(tasks.size());
     std::vector<NRTSimulator::TTreadParams> task_params(tasks.size());
@@ -154,12 +103,14 @@ int main(int argc, char *argv[]) {
     for (size_t i = 0; i < threads.size(); ++i) {
         pthread_join(threads[i], dummy);
         std::cout << tasks[i]->GetName() << ": worst case responce time " << tasks[i]->GetWorstCaseResponceTime() << std::endl;
-        if (histogramm) {
+        if (argParser.IsPlotNeeded()) {
             NRTSimulator::plotResponceTimeHistogramm(tasks[i]);
         }
     }
 
-    std::cout << "Worst case kernell latency: " << rta.EstimateWorstCaseKernellLatency() << std::endl;
+    if (argParser.IsHighKernelLatencyNeeded()) {
+        std::cout << "Worst case kernell latency: " << rta.EstimateWorstCaseKernellLatency() << std::endl;
+    }    
 
     return 0;
 }
