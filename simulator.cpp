@@ -28,20 +28,20 @@ namespace NRTSimulator {
     static void parseCommandLineArgs(int argc,char * argv[], std::string & filename, int & simulationTime,
         bool & counting, bool & hist) {
         
-        const std::string USAGE("Usage: simulator [ch] -f str -s num.\n");
+        const std::string USAGE("Usage: simulator [pc] -f str -s num.\n");
         counting = false;
         hist = false;
         static struct option long_options[] = {
             {"file",    required_argument, 0, 'f'},
             {"simtime", required_argument, 0, 's'},
-            {"hist", no_argument, 0, 'h'},
+            {"plot", no_argument, 0, 'p'},
             {"counting", no_argument, 0, 'c'},
             {0, 0, 0,  0}
         };
 
         int long_index = 0;
         int opt = 0;   
-        while ((opt = getopt_long(argc, argv,"hcf:s:", long_options, &long_index )) != -1) {
+        while ((opt = getopt_long(argc, argv,"pcf:s:", long_options, &long_index )) != -1) {
             switch (opt) {
                 case 'f' : 
                     filename = std::string(optarg);
@@ -52,7 +52,7 @@ namespace NRTSimulator {
                 case 'c':
                     counting = true;
                     break;
-                case 'h':
+                case 'p':
                     hist = true;
                     break;
                 default: 
@@ -134,6 +134,25 @@ int main(int argc, char *argv[]) {
         pthread_create(&threads[i], NULL, &NRTSimulator::runTask, &task_params[i]);
     }   
 
+    // cpu_set_t set;
+    // CPU_ZERO(&set);
+    // CPU_SET(0, &set);
+
+    // if (pthread_setaffinity_np(pthread_self(), sizeof(set), &set) == -1) {
+    //     std::cerr << "failed to set cpu." << std::endl;
+    //     exit(-1);
+    // } 
+
+    // while(std::chrono::high_resolution_clock::now() < end) {
+    //     int p = fork();
+    //     if (p == 0) {
+    //         sleep(100);
+    //     } else {
+    //         kill(p, SIGTERM);
+    //     }
+    //     usleep(1000);
+    // }
+
     void ** dummy = NULL;
     for (size_t i = 0; i < threads.size(); ++i) {
         pthread_join(threads[i], dummy);
@@ -142,6 +161,8 @@ int main(int argc, char *argv[]) {
             NRTSimulator::plotResponceTimeHistogramm(tasks[i]);
         }
     }
+
+    std::cout << "Worst case kernell latency: " << rta.EstimateWorstCaseKernellLatency() << std::endl;
 
     return 0;
 }

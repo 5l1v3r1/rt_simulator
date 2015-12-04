@@ -8,10 +8,11 @@
 #include "random_var.h"
 
 namespace NRTSimulator {
+	int TRandomVar::seed = 0;
 	TRandomVar::TRandomVar(const std::vector<double> & mass, const vector<long long> & values)
 		: Distribution(mass.begin(), mass.end())
 		, Values(values)
-		, Generator(getpid())
+		, Generator(seed++)
 	{
 	}
 

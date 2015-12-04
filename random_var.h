@@ -16,6 +16,7 @@ namespace NRTSimulator {
 		std::discrete_distribution<> Distribution;
 		vector<long long> Values;
     	std::minstd_rand Generator;
+    	static int seed; 
 	public:		
 		TRandomVar(const std::vector<double> & mass, const vector<long long> & values);
 		long long Sample();
