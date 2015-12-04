@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <iostream>
 #include <chrono>
@@ -9,9 +10,6 @@
 
 #include "tasks_file_parser.h"
 #include "rta.h"
-
-#include <sys/types.h>
-#include <unistd.h>
 
 namespace NRTSimulator {
     struct TTreadParams {
@@ -27,10 +25,14 @@ namespace NRTSimulator {
 
     static void parseCommandLineArgs(int argc,char * argv[], std::string & filename, int & simulationTime,
         bool & counting, bool & hist) {
+        //TODO: create class for parsing command line args
         
         const std::string USAGE("Usage: simulator [pc] -f str -s num.\n");
         counting = false;
         hist = false;
+        //TODO: add kernel latency parameter, add output parameter
+        //TODO: create default for file and simtime
+        //TODO: add help argument
         static struct option long_options[] = {
             {"file",    required_argument, 0, 'f'},
             {"simtime", required_argument, 0, 's'},
@@ -68,20 +70,14 @@ namespace NRTSimulator {
     }
 
     static void plotResponceTimeHistogramm(const std::shared_ptr<TTask> task) {
+        //TODO: create class for ploting
         std::vector<long long> responceTimes = task->GetResponceTimes();
-        int numberOfIntervals = 10;
-        double min = *std::max_element(responceTimes.begin(), responceTimes.end()) / 1000000.0;
-        double max = *std::min_element(responceTimes.begin(), responceTimes.end()) / 1000000.0;
-        double width = (max - min) / numberOfIntervals;
 
         FILE* pipehandle=popen("gnuplot -persist","w"); 
         fprintf(pipehandle, "set term wxt title '%s Responce Time'\n", task->GetName().c_str());
         fprintf(pipehandle, "set xlabel 'ResponceTime (ms)'\n");
-        fprintf(pipehandle, "set ylabel 'Count'\n");
-        fprintf(pipehandle, "width=%f\n", width);
-        fprintf(pipehandle, "hist(x,width)=width*floor(x/width)+width/2.0\n"); 
-        fprintf(pipehandle, "set boxwidth width*0.9\n");        
-        fprintf(pipehandle, "plot \"-\" u (hist($1,width)):(1.0) smooth freq w boxes lc rgb\"green\" notitle\n");
+        fprintf(pipehandle, "set ylabel 'CDF'\n");
+        fprintf(pipehandle, "plot \"-\" u 1:(1./%lu) smooth cumulative\n", responceTimes.size());
 
         
         for (const auto & responceTime : responceTimes) {
@@ -95,7 +91,7 @@ namespace NRTSimulator {
 
 }
 
-const std::chrono::seconds TASK_OFFSET(2);
+static const std::chrono::seconds TASK_OFFSET(2);
 int main(int argc, char *argv[]) {
     int simulationTime = 0;
     std::string filename;
@@ -134,6 +130,7 @@ int main(int argc, char *argv[]) {
         pthread_create(&threads[i], NULL, &NRTSimulator::runTask, &task_params[i]);
     }   
 
+    // TODO: create class representing high kernel latency task
     // cpu_set_t set;
     // CPU_ZERO(&set);
     // CPU_SET(0, &set);
