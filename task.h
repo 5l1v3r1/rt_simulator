@@ -60,11 +60,11 @@ namespace NRTSimulator {
 	class TCountingTask : public TTask
 	{
 	private:
-		const double ConvertRate = 3.69103546; //ConvertRate how many ns one "long long" addition take.
-		//TODO create static method that estimates ConvertRate.
+		static double ConvertRate; //ConvertRate how many ns one "long long" addition take. (Around 3.69103546)
 	public:
 		TCountingTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		virtual ~TCountingTask();
+		static void EstimateConvertRate();
 	private:
 		virtual void JobBody(long long) override;
 	};

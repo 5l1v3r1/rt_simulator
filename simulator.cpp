@@ -51,6 +51,11 @@ int main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks =
          NRTSimulator::TTaskFileParser(!argParser.IsCountingUsed()).Parse(argParser.GetTaskSpecFileName());
 
+    if (argParser.IsCountingUsed()) {
+        std::cout << "Estimate convert rate for counting task..." << std::endl;
+        NRTSimulator::TCountingTask::EstimateConvertRate();
+    }
+
     std::cout << "Responce time analysis..." << std::endl;
 
     NRTSimulator::TRTA rta(tasks);

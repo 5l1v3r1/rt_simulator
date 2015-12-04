@@ -118,21 +118,7 @@ namespace NRTSimulator {
         ComputeFireTimerSpec();
         clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
     }
-
-
-    TCountingTask::TCountingTask(const TRandomVar & executionTime, long long period, 
-                                 int cpu, int priority, const std::string & name)
-        : TTask(executionTime, period, cpu, priority, name)
-    {}
-
-    void TCountingTask::JobBody(long long executionTime) {
-        long long countTo = executionTime / ConvertRate;
-        for (long long i = 0; i < countTo; ++i) {
-              //Just counting
-        }
-    }
-
-    TCountingTask::~TCountingTask() {}
+    
 
     TTimerTask::TTimerTask(const TRandomVar & executionTime, long long period, 
                                  int cpu, int priority, const std::string & name)
@@ -154,7 +140,49 @@ namespace NRTSimulator {
         }
     }
 
+    TTimerTask::~TTimerTask() {}
 
-    TTimerTask::~TTimerTask() {
+
+    TCountingTask::TCountingTask(const TRandomVar & executionTime, long long period, 
+                                 int cpu, int priority, const std::string & name)
+        : TTask(executionTime, period, cpu, priority, name)
+    {}
+
+    void TCountingTask::JobBody(long long executionTime) {
+        long long countTo = executionTime / ConvertRate;
+        for (long long i = 0; i < countTo; ++i) {
+              //Just counting
+        }
+    }
+
+    TCountingTask::~TCountingTask() {}
+
+
+    double TCountingTask::ConvertRate;
+    void TCountingTask::EstimateConvertRate() {
+        struct sched_param previousParam;
+        int previousPolicy;
+        pthread_getschedparam(pthread_self(), &previousPolicy, &previousParam);
+
+        struct sched_param param;
+        param.sched_priority = 80;
+        if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param)) {
+            std::cerr << "Main: failed to set RT priority." << std::endl;
+            exit(-1);  
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
+        long long countTo = 1000000000;
+        for (long long i = 0; i < countTo; ++i) {
+
+        }
+        long long countDuration = std::chrono::duration_cast<std::chrono::nanoseconds>
+            (std::chrono::high_resolution_clock::now() - start).count();
+
+        if (pthread_setschedparam(pthread_self(), previousPolicy, &previousParam)) {
+            std::cerr << "Main: failed to return to normal priority." << std::endl;
+            exit(-1);
+        }
+        ConvertRate = countDuration / (long double) countTo;
     }
 }
