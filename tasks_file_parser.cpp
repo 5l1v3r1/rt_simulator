@@ -12,6 +12,38 @@ namespace NRTSimulator
 	{
 	}
 
+	TRandomVar TTaskFileParser::ParseRandomVar(const libconfig::Setting & probs, 
+									const std::string name)
+	{
+		std::vector<double> probMasses;
+		std::vector<long long> probTimes;
+
+		size_t numberOfProbs = probs.getLength();
+
+		for (size_t probNumber = 0; probNumber < numberOfProbs; ++ probNumber) {
+			double mass;
+
+			if (!probs[probNumber].lookupValue("mass", mass)) {
+				std::cerr << "No 'mass' in " << name <<
+				          " (It soubld be double with decimal point)" << std::endl;
+				exit(-1);
+			}
+
+			long long t;
+
+			if (!probs[probNumber].lookupValue("time", t)) {
+				std::cerr << "No 'time' in " << name << " (It should be long with L)"
+				          << std::endl;
+				exit(-1);
+			}
+
+			probMasses.push_back(mass);
+			probTimes.push_back(t);
+		}
+
+		return TRandomVar(probMasses, probTimes);
+	}
+
 	std::vector<std::shared_ptr<TTask>> TTaskFileParser::Parse(
 	                                     const std::string & file)
 	{
@@ -58,50 +90,15 @@ namespace NRTSimulator
 					exit(-1);
 				}
 
-				long long period;
-
-				if (!task.lookupValue("period", period)) {
-					std::cerr << "No 'period' in " << name << " (It should be long with L)" <<
-					          std::endl;
-					exit(-1);
-				}
-
-
-				std::vector<double> probMasses;
-				std::vector<long long> probTimes;
-
-				const libconfig::Setting& probs = task["execution"];
-				size_t numberOfProbs = probs.getLength();
-
-				for (size_t probNumber = 0; probNumber < numberOfProbs; ++ probNumber) {
-					double mass;
-
-					if (!probs[probNumber].lookupValue("mass", mass)) {
-						std::cerr << "No 'mass' in " << name <<
-						          " execution (It soubld be double with decimal point)" << std::endl;
-						exit(-1);
-					}
-
-					long long executionTime;
-
-					if (!probs[probNumber].lookupValue("time", executionTime)) {
-						std::cerr << "No 'time' in " << name << " execution (It should be long with L)"
-						          << std::endl;
-						exit(-1);
-					}
-
-					probMasses.push_back(mass);
-					probTimes.push_back(executionTime);
-				}
+				TRandomVar execution = ParseRandomVar(task["execution"], name);
+				TRandomVar period = ParseRandomVar(task["period"], name);
 
 				if (IsTimerTasks) {
 					result.push_back(std::shared_ptr<TTask>
-					                 (new TTimerTask(TRandomVar(probMasses, probTimes), period, cpu, priority,
-					                                 name)));
+					                 (new TTimerTask(execution, period , cpu, priority, name)));
 				} else {
 					result.push_back(std::shared_ptr<TTask>
-					                 (new TCountingTask(TRandomVar(probMasses, probTimes), period, cpu, priority,
-					                                    name)));
+					                 (new TTimerTask(execution, period , cpu, priority, name)));
 				}
 
 			}

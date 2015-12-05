@@ -23,4 +23,8 @@ namespace NRTSimulator
 	{
 		return *std::max_element(Values.begin(), Values.end());
 	}
+	long long TRandomVar::GetMinValue() const
+	{
+		return *std::min_element(Values.begin(), Values.end());
+	}
 }

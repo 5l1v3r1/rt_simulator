@@ -16,10 +16,10 @@ namespace NRTSimulator
 	{
 	private:
 		TRandomVar ExecutionTime;
-		std::chrono::nanoseconds Period;
+		TRandomVar Period;
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> EndSimulation;
-		std::chrono::time_point<std::chrono::high_resolution_clock> NextTaskFire;
+		std::chrono::time_point<std::chrono::high_resolution_clock> NextJobFire;
 
 		std::chrono::nanoseconds WorstCaseResponce;
 
@@ -33,7 +33,8 @@ namespace NRTSimulator
 
 		pthread_t ThreadId;
 	public:
-		TTask(const TRandomVar & executionTime, long long period, int cpu, int priority,
+		TTask(const TRandomVar & executionTime, const TRandomVar & period, int cpu,
+		      int priority,
 		      const std::string & name);
 		void Run(long long startAt, long long endAt);
 		void Join();
@@ -72,7 +73,8 @@ namespace NRTSimulator
 		static double
 		ConvertRate; //ConvertRate how many ns one "long long" addition take. (Around 3.69103546)
 	public:
-		TCountingTask(const TRandomVar & executionTime, long long period, int cpu,
+		TCountingTask(const TRandomVar & executionTime, const TRandomVar & period,
+		              int cpu,
 		              int priority, const std::string & name);
 		virtual ~TCountingTask();
 		static void EstimateConvertRate();
@@ -86,7 +88,7 @@ namespace NRTSimulator
 		struct timespec JobDoneTimeSpec;
 		struct timespec JobStartCPUClockTimeSpec;
 	public:
-		TTimerTask(const TRandomVar & executionTime, long long period, int cpu,
+		TTimerTask(const TRandomVar & executionTime, const TRandomVar & period, int cpu,
 		           int priority, const std::string & name);
 		virtual ~TTimerTask();
 	private:

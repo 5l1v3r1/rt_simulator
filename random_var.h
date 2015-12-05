@@ -17,5 +17,6 @@ namespace NRTSimulator
 		           const std::vector<long long> & values);
 		long long Sample();
 		long long GetMaxValue() const;
+		long long GetMinValue() const;
 	};
 }

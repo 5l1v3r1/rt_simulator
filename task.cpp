@@ -19,7 +19,7 @@ namespace NRTSimulator
 		return NULL;
 	}
 
-	TTask::TTask(const TRandomVar & executionTime, long long period,
+	TTask::TTask(const TRandomVar & executionTime, const TRandomVar & period,
 	             int cpu, int priority, const std::string & name)
 		: ExecutionTime(executionTime)
 		, Period(period)
@@ -58,7 +58,7 @@ namespace NRTSimulator
 
 	long long TTask::GetPeriod() const
 	{
-		return Period.count();
+		return Period.GetMinValue();
 	}
 
 	int TTask::GetCpu() const
@@ -93,22 +93,22 @@ namespace NRTSimulator
 	void TTask::ComputeFireTimerSpec()
 	{
 		long long offsetNanosecond = std::chrono::nanoseconds(
-		                                 NextTaskFire.time_since_epoch()).count();
+		                                 NextJobFire.time_since_epoch()).count();
 		JobFireTimeSpec.tv_sec = offsetNanosecond / NUMBER_OF_NANOSECONDS_IN_SECOND;
 		JobFireTimeSpec.tv_nsec = offsetNanosecond % NUMBER_OF_NANOSECONDS_IN_SECOND;
 	}
 
 	void TTask::Initialize()
 	{
-		ResponceTimes.reserve((EndSimulation - NextTaskFire) / Period + 1);
+		ResponceTimes.reserve((EndSimulation - NextJobFire) / std::chrono::nanoseconds(Period.GetMinValue()) + 1);
 		SetUpPriority();
 		SetUpCPU();
 	}
 
 	void TTask::Run(long long startAt, long long endAt)
 	{
-		NextTaskFire = std::chrono::time_point<std::chrono::high_resolution_clock>
-		               (std::chrono::nanoseconds(startAt));
+		NextJobFire = std::chrono::time_point<std::chrono::high_resolution_clock>
+		              (std::chrono::nanoseconds(startAt));
 		EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>
 		                (std::chrono::nanoseconds(endAt));
 		pthread_create(&ThreadId, NULL, &runTask, this);
@@ -124,18 +124,18 @@ namespace NRTSimulator
 	{
 		Initialize();
 
-		while (NextTaskFire < EndSimulation) {
+		while (NextJobFire < EndSimulation) {
 			WaitForNextActivation();
 			long long executionTime = ExecutionTime.Sample();
 			JobBody(executionTime);
-			auto taskProcessed = std::chrono::high_resolution_clock::now();
+			auto taskDone = std::chrono::high_resolution_clock::now();
 			auto responceTime = std::chrono::duration_cast<std::chrono::nanoseconds>
-			                    (taskProcessed - NextTaskFire);
+			                    (taskDone - NextJobFire);
 			//std::cout << responceTime.count() << std::endl;
 
 			ResponceTimes.push_back(responceTime);
 
-			NextTaskFire += Period;
+			NextJobFire += std::chrono::nanoseconds(Period.Sample());
 		}
 	}
 
@@ -146,7 +146,8 @@ namespace NRTSimulator
 	}
 
 
-	TTimerTask::TTimerTask(const TRandomVar & executionTime, long long period,
+	TTimerTask::TTimerTask(const TRandomVar & executionTime,
+	                       const TRandomVar & period,
 	                       int cpu, int priority, const std::string & name)
 		: TTask(executionTime, period, cpu, priority, name)
 	{
@@ -174,7 +175,8 @@ namespace NRTSimulator
 	TTimerTask::~TTimerTask() {}
 
 
-	TCountingTask::TCountingTask(const TRandomVar & executionTime, long long period,
+	TCountingTask::TCountingTask(const TRandomVar & executionTime,
+	                             const TRandomVar & period,
 	                             int cpu, int priority, const std::string & name)
 		: TTask(executionTime, period, cpu, priority, name)
 	{}
