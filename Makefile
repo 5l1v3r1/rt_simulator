@@ -6,7 +6,7 @@ SIMULATOR=simulator
 
 SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp task.cpp random_var.cpp rta.cpp cmd_arg_parser.cpp cdf_plot.cpp latency_task.cpp output.cpp
 
-all: $(SIMULATOR) indent report
+all: $(SIMULATOR) indent
 
 $(SIMULATOR): $(SOURCE_SIMULATOR:.cpp=.o)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SOURCE_SIMULATOR:.cpp=.o) $(LDLIBS) -o $(SIMULATOR)
