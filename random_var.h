@@ -3,8 +3,10 @@
 #include <vector>
 #include <random>
 
-namespace NRTSimulator {
-	class TRandomVar {
+namespace NRTSimulator
+{
+	class TRandomVar
+	{
 	private:
 		std::discrete_distribution<> Distribution;
 		std::vector<long long> Values;

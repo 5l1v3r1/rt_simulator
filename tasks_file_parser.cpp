@@ -5,13 +5,16 @@
 #include <libconfig.h++>
 
 
-namespace NRTSimulator {
+namespace NRTSimulator
+{
 	TTaskFileParser::TTaskFileParser(bool isTimerTasks)
-		:	IsTimerTasks(isTimerTasks) {
+		:	IsTimerTasks(isTimerTasks)
+	{
 	}
 
 	std::vector<std::shared_ptr<TTask>> TTaskFileParser::Parse(
-	const std::string & file) {
+	                                     const std::string & file)
+	{
 		std::vector<std::shared_ptr<TTask>> result;
 
 		libconfig::Config cfg;

@@ -1,16 +1,19 @@
 #include <chrono>
 #include <iostream>
 #include <algorithm>
+#include <pthread.h>
 
 #include "task.h"
 
-namespace NRTSimulator {
+namespace NRTSimulator
+{
 
 	static const long long NUMBER_OF_NANOSECONDS_IN_SECOND =
 	    std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(
 	                1)).count();
 
-	void * runTask(void * params) {
+	void * runTask(void * params)
+	{
 		TTask * task = (TTask*)params;
 		task->TaskBody();
 		return NULL;
@@ -22,13 +25,16 @@ namespace NRTSimulator {
 		, Period(period)
 		, CPU(cpu)
 		, Priority(priority)
-		, Name(name) {
+		, Name(name)
+	{
 	}
 
-	TTask::~TTask() {
+	TTask::~TTask()
+	{
 	}
 
-	void TTask::SetUpPriority() {
+	void TTask::SetUpPriority()
+	{
 		struct sched_param param;
 		param.sched_priority = Priority;
 
@@ -38,7 +44,8 @@ namespace NRTSimulator {
 		}
 	}
 
-	void TTask::SetUpCPU() {
+	void TTask::SetUpCPU()
+	{
 		cpu_set_t set;
 		CPU_ZERO(&set);
 		CPU_SET(CPU, &set);
@@ -49,60 +56,72 @@ namespace NRTSimulator {
 		}
 	}
 
-	long long TTask::GetPeriod() const {
+	long long TTask::GetPeriod() const
+	{
 		return Period.count();
 	}
 
-	int TTask::GetCpu() const {
+	int TTask::GetCpu() const
+	{
 		return CPU;
 	}
-	int TTask::GetPriority() const {
+	int TTask::GetPriority() const
+	{
 		return Priority;
 	}
-	long long TTask::GetWorstCaseExecutionTime() const {
+	long long TTask::GetWorstCaseExecutionTime() const
+	{
 		return ExecutionTime.GetMaxValue();
 	}
-	const std::string & TTask::GetName() const {
+	const std::string & TTask::GetName() const
+	{
 		return Name;
 	}
-	long long TTask::GetWorstCaseResponceTime() const {
+	long long TTask::GetWorstCaseResponceTime() const
+	{
 		return (*std::max_element(ResponceTimes.begin(), ResponceTimes.end())).count();
 	}
 
-	std::vector<long long> TTask::GetResponceTimes() const {
+	std::vector<long long> TTask::GetResponceTimes() const
+	{
 		std::vector<long long> res(ResponceTimes.size());
 		std::transform(ResponceTimes.begin(), ResponceTimes.end(), res.begin(),
 		[](const std::chrono::nanoseconds & duration) {return duration.count();});
 		return res;
 	}
 
-	void TTask::ComputeFireTimerSpec() {
+	void TTask::ComputeFireTimerSpec()
+	{
 		long long offsetNanosecond = std::chrono::nanoseconds(
 		                                 NextTaskFire.time_since_epoch()).count();
 		JobFireTimeSpec.tv_sec = offsetNanosecond / NUMBER_OF_NANOSECONDS_IN_SECOND;
 		JobFireTimeSpec.tv_nsec = offsetNanosecond % NUMBER_OF_NANOSECONDS_IN_SECOND;
 	}
 
-	void TTask::Initialize() {
+	void TTask::Initialize()
+	{
 		ResponceTimes.reserve((EndSimulation - NextTaskFire) / Period + 1);
 		SetUpPriority();
 		SetUpCPU();
 	}
 
-	void TTask::Run(long long startAt, long long endAt) {
+	void TTask::Run(long long startAt, long long endAt)
+	{
 		NextTaskFire = std::chrono::time_point<std::chrono::high_resolution_clock>
 		               (std::chrono::nanoseconds(startAt));
 		EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>
 		                (std::chrono::nanoseconds(endAt));
-		pthread_create(&ThreadId, NULL, &NRTSimulator::runTask, this);
+		pthread_create(&ThreadId, NULL, &runTask, this);
 	}
 
-	void TTask::Join() {
+	void TTask::Join()
+	{
 		void ** dummy = NULL;
 		pthread_join(ThreadId, dummy);
 	}
 
-	void TTask::TaskBody() {
+	void TTask::TaskBody()
+	{
 		Initialize();
 
 		while (NextTaskFire < EndSimulation) {
@@ -120,7 +139,8 @@ namespace NRTSimulator {
 		}
 	}
 
-	void TTask::WaitForNextActivation() {
+	void TTask::WaitForNextActivation()
+	{
 		ComputeFireTimerSpec();
 		clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &JobFireTimeSpec, NULL);
 	}
@@ -128,10 +148,12 @@ namespace NRTSimulator {
 
 	TTimerTask::TTimerTask(const TRandomVar & executionTime, long long period,
 	                       int cpu, int priority, const std::string & name)
-		: TTask(executionTime, period, cpu, priority, name) {
+		: TTask(executionTime, period, cpu, priority, name)
+	{
 	}
 
-	void TTimerTask::JobBody(long long executionTime) {
+	void TTimerTask::JobBody(long long executionTime)
+	{
 		clock_gettime(CLOCK_THREAD_CPUTIME_ID, &JobStartCPUClockTimeSpec);
 		long long start_time = JobStartCPUClockTimeSpec.tv_sec *
 		                       NUMBER_OF_NANOSECONDS_IN_SECOND +
@@ -157,7 +179,8 @@ namespace NRTSimulator {
 		: TTask(executionTime, period, cpu, priority, name)
 	{}
 
-	void TCountingTask::JobBody(long long executionTime) {
+	void TCountingTask::JobBody(long long executionTime)
+	{
 		long long countTo = executionTime / ConvertRate;
 
 		for (long long i = 0; i < countTo; ++i) {
@@ -169,7 +192,8 @@ namespace NRTSimulator {
 
 
 	double TCountingTask::ConvertRate;
-	void TCountingTask::EstimateConvertRate() {
+	void TCountingTask::EstimateConvertRate()
+	{
 		struct sched_param previousParam;
 		int previousPolicy;
 		pthread_getschedparam(pthread_self(), &previousPolicy, &previousParam);

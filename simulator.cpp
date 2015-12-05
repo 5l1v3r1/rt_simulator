@@ -1,16 +1,19 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+#include <algorithm>
 
 #include "task.h"
 #include "tasks_file_parser.h"
 #include "rta.h"
 #include "cmd_arg_parser.h"
 #include "cdf_plot.h"
+#include "latency_task.h"
 
 
 static const std::chrono::seconds TASK_OFFSET(2);
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	NRTSimulator::TCmdArgParser argParser(argc, argv);
 
 	std::vector<std::shared_ptr<NRTSimulator::TTask>> tasks =
@@ -43,7 +46,8 @@ int main(int argc, char *argv[]) {
 	auto end = start + std::chrono::seconds(argParser.GetSimulationTime());
 
 	std::vector<pthread_t> threads(tasks.size());
-	std::vector<NRTSimulator::TTaskTreadParams> task_params(tasks.size());
+
+    std::cout << "Run real time tasks..." << std::endl;
 
 	for (size_t i = 0; i < tasks.size(); ++i) {
 		tasks[i]->Run(std::chrono::duration_cast<std::chrono::nanoseconds>
@@ -52,25 +56,22 @@ int main(int argc, char *argv[]) {
 		              (end.time_since_epoch()).count());
 	}
 
-	// TODO: create class representing high kernel latency task
-	// cpu_set_t set;
-	// CPU_ZERO(&set);
-	// CPU_SET(0, &set);
 
-	// if (pthread_setaffinity_np(pthread_self(), sizeof(set), &set) == -1) {
-	//     std::cerr << "failed to set cpu." << std::endl;
-	//     exit(-1);
-	// }
+    if (argParser.IsHighKernelLatencyNeeded()) {
+        std::cout << "Run hight latency tasks..." << std::endl;
+        std::vector<int> cpus;
+        for (const auto & task: tasks) {
+            int cpu = task->GetCpu();
+            if(std::find(cpus.begin(), cpus.end(), cpu) == cpus.end()) {
+                cpus.push_back(cpu);
+            }
+        }
 
-	// while(std::chrono::high_resolution_clock::now() < end) {
-	//     int p = fork();
-	//     if (p == 0) {
-	//         sleep(100);
-	//     } else {
-	//         kill(p, SIGTERM);
-	//     }
-	//     usleep(1000);
-	// }
+        NRTSimulator::TLatencyTaskSet latencyTaskSet(cpus);
+        latencyTaskSet.Run(start, end);
+        latencyTaskSet.Join();
+    }
+
 
 	for (size_t i = 0; i < threads.size(); ++i) {
 		tasks[i]->Join();

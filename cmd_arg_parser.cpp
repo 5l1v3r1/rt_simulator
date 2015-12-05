@@ -3,17 +3,19 @@
 
 #include "cmd_arg_parser.h"
 
-namespace NRTSimulator {
+namespace NRTSimulator
+{
 	const std::string TCmdArgParser::USAGE =
-	    "Usage: %s [-f file] [-o directory] [-s number] [-pkc]\n";
-	const std::string TCmdArgParser::HELP = USAGE +
-	                                        "Simulate set of real time tasks, and perform responce time analysis\n"
-	                                        "  -f,--file\t\tfile with task parameter (default task_spec.cfg)\n"
-	                                        "  -o,--output\t\tdirectory to which put simulated responce times of the\n\t\t\t tasks (default no output)\n"
-	                                        "  -s,--simtime\t\ttime of simulation in seconds (default 10s)\n"
-	                                        "  -p,--plot\t\tplot task CDF (usign gnuplot)\n"
-	                                        "  -k,--latency\t\trun tasks with hight kernel latency\n\t\t\t and estimate kernel latency\n"
-	                                        "  -c,--counting\t\tuse counting to model execution time\n\t\t\t (instead of busy wait on timer)\n";
+	    "Usage: %s [-f file] [-o directory] [-s number] [-plc]\n";
+	const std::string TCmdArgParser::HELP =
+	    USAGE +
+	    "Simulate set of real time tasks, and perform responce time analysis\n"
+	    "  -f,--file\t\tfile with task parameter (default task_spec.cfg)\n"
+	    "  -o,--output\t\tdirectory to which put simulated responce times of the\n\t\t\t tasks (default no output)\n"
+	    "  -s,--simtime\t\ttime of simulation in seconds (default 10s)\n"
+	    "  -p,--plot\t\tplot task CDF (usign gnuplot)\n"
+	    "  -k,--latency\t\trun tasks with hight kernel latency\n\t\t\t and estimate kernel latency\n"
+	    "  -c,--counting\t\tuse counting to model execution time\n\t\t\t (instead of busy wait on timer)\n";
 
 	TCmdArgParser::TCmdArgParser(int argc, char *argv[])
 		: TaskSpecFileName("task_spec.cfg")
@@ -21,7 +23,8 @@ namespace NRTSimulator {
 		, SimulationTime(10)
 		, PlotNeeded(false)
 		, HighKernelLatencyNeeded(false)
-		, CountingUsed(false) {
+		, CountingUsed(false)
+	{
 		char const* programName = argv[0];
 
 		static struct option long_options[] = {
@@ -30,7 +33,7 @@ namespace NRTSimulator {
 			{"plot", no_argument, 0, 'p'},
 			{"counting", no_argument, 0, 'c'},
 			{"output", required_argument, 0, 'o'},
-			{"latency", required_argument, 0, 'l'},
+			{"latency", no_argument, 0, 'l'},
 			{"help", no_argument, 0, 'h'},
 			{0, 0, 0,  0}
 		};
@@ -75,22 +78,28 @@ namespace NRTSimulator {
 			}
 		}
 	}
-	const std::string & TCmdArgParser::GetTaskSpecFileName() const {
+	const std::string & TCmdArgParser::GetTaskSpecFileName() const
+	{
 		return TaskSpecFileName;
 	}
-	const std::string & TCmdArgParser::GetOutputDirectory() const {
+	const std::string & TCmdArgParser::GetOutputDirectory() const
+	{
 		return OutputDirecory;
 	}
-	long long TCmdArgParser::GetSimulationTime() const {
+	long long TCmdArgParser::GetSimulationTime() const
+	{
 		return SimulationTime;
 	}
-	bool TCmdArgParser::IsPlotNeeded() const {
+	bool TCmdArgParser::IsPlotNeeded() const
+	{
 		return PlotNeeded;
 	}
-	bool TCmdArgParser::IsHighKernelLatencyNeeded() const {
+	bool TCmdArgParser::IsHighKernelLatencyNeeded() const
+	{
 		return HighKernelLatencyNeeded;
 	}
-	bool TCmdArgParser::IsCountingUsed() const {
+	bool TCmdArgParser::IsCountingUsed() const
+	{
 		return CountingUsed;
 	}
 }

@@ -1,8 +1,10 @@
 #include <vector>
 #include <string>
 
-namespace NRTSimulator {
-	class TCDFPlot {
+namespace NRTSimulator
+{
+	class TCDFPlot
+	{
 	private:
 		static const double SCALE;
 	public:

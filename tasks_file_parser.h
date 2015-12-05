@@ -7,8 +7,10 @@
 
 #include "task.h"
 
-namespace NRTSimulator {
-	class TTaskFileParser {
+namespace NRTSimulator
+{
+	class TTaskFileParser
+	{
 	private:
 		bool IsTimerTasks;
 	public:

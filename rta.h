@@ -3,8 +3,10 @@
 
 #include "task.h"
 
-namespace NRTSimulator {
-	class TRTA {
+namespace NRTSimulator
+{
+	class TRTA
+	{
 	private:
 		std::vector<long long> WorstCaseResponceTime;
 		std::vector<bool> IsSchedulable;

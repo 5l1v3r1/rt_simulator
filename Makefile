@@ -4,7 +4,7 @@ LDLIBS = -lm -lrt -lconfig++
 
 SIMULATOR=simulator
 
-SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp task.cpp random_var.cpp rta.cpp cmd_arg_parser.cpp cdf_plot.cpp
+SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp task.cpp random_var.cpp rta.cpp cmd_arg_parser.cpp cdf_plot.cpp latency_task.cpp
 
 all: $(SIMULATOR)
 
@@ -15,7 +15,7 @@ clean:
 	rm -f *.d *.o $(SIMULATOR)
 
 indent:
-	astyle --style=java --pad-header --indent=tab --indent-namespaces --break-blocks\
+	astyle --style=kr --pad-header --indent=tab --indent-namespaces --break-blocks\
 		--pad-oper --unpad-paren --add-one-line-brackets \
 		--suffix=none --max-code-length=80 --break-after-logical  *.cpp *.h
 

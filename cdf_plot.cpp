@@ -1,9 +1,11 @@
 #include "cdf_plot.h"
 
-namespace NRTSimulator {
+namespace NRTSimulator
+{
 	const double TCDFPlot::SCALE = 1000000.0;
 	void TCDFPlot::Plot(const std::vector<long long> & points,
-	                    const std::string & name) {
+	                    const std::string & name)
+	{
 		FILE* pipehandle = popen("gnuplot -persist", "w");
 		fprintf(pipehandle, "set term wxt title '%s'\n", name.c_str());
 		fprintf(pipehandle, "set xlabel 'ResponceTime (ms)'\n");

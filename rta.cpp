@@ -4,14 +4,17 @@
 
 #include "rta.h"
 
-namespace NRTSimulator {
+namespace NRTSimulator
+{
 	TRTA::TRTA(const std::vector<std::shared_ptr<TTask>> & tasks)
 		: WorstCaseResponceTime(tasks.size(), -1)
 		, IsSchedulable(tasks.size(), true)
 		, Tasks(tasks)
-		, WorstCaseKernelLatency(0) {
+		, WorstCaseKernelLatency(0)
+	{
 	}
-	void TRTA::Compute() {
+	void TRTA::Compute()
+	{
 		IsSchedulable = std::vector<bool>(Tasks.size(), true);
 		WorstCaseResponceTime = std::vector<long long>(Tasks.size(), -1);
 
@@ -19,14 +22,17 @@ namespace NRTSimulator {
 			Compute(taskNumber);
 		}
 	}
-	long long TRTA::GetWorstCaseResponceTime(size_t taskNumber) {
+	long long TRTA::GetWorstCaseResponceTime(size_t taskNumber)
+	{
 		return WorstCaseResponceTime[taskNumber];
 	}
-	bool TRTA::CheckIsShedulable(size_t taskNumber) {
+	bool TRTA::CheckIsShedulable(size_t taskNumber)
+	{
 		return IsSchedulable[taskNumber];
 	}
 
-	long long TRTA::EstimateWorstCaseKernellLatency() {
+	long long TRTA::EstimateWorstCaseKernellLatency()
+	{
 		for (const auto & task : Tasks) {
 			if (task->GetWorstCaseResponceTime() > task->GetPeriod()) {
 				return -1;
@@ -64,7 +70,8 @@ namespace NRTSimulator {
 		}
 	}
 
-	void TRTA::Compute(size_t taskNumber) {
+	void TRTA::Compute(size_t taskNumber)
+	{
 		if (WorstCaseResponceTime[taskNumber] != -1) {
 			return;
 		}

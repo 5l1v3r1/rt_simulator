@@ -7,11 +7,13 @@
 
 #include "random_var.h"
 
-namespace NRTSimulator {
+namespace NRTSimulator
+{
 
 	void * runTask(void * params);
 
-	class TTask	{
+	class TTask
+	{
 	private:
 		TRandomVar ExecutionTime;
 		std::chrono::nanoseconds Period;
@@ -64,7 +66,8 @@ namespace NRTSimulator {
 		friend void * runTask(void * params);
 	};
 
-	class TCountingTask : public TTask {
+	class TCountingTask : public TTask
+	{
 	private:
 		static double
 		ConvertRate; //ConvertRate how many ns one "long long" addition take. (Around 3.69103546)
@@ -77,7 +80,8 @@ namespace NRTSimulator {
 		virtual void JobBody(long long) override;
 	};
 
-	class TTimerTask : public TTask	{
+	class TTimerTask : public TTask
+	{
 	private:
 		struct timespec JobDoneTimeSpec;
 		struct timespec JobStartCPUClockTimeSpec;

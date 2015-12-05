@@ -1,7 +1,9 @@
 #include <string>
 
-namespace NRTSimulator {
-	class TCmdArgParser {
+namespace NRTSimulator
+{
+	class TCmdArgParser
+	{
 	private:
 		static const std::string USAGE;
 		static const std::string HELP;
