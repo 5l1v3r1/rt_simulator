@@ -43,10 +43,8 @@ int main(int argc, char *argv[]) {
     std::vector<pthread_t> threads(tasks.size());
     std::vector<NRTSimulator::TTaskTreadParams> task_params(tasks.size());
     for (size_t i = 0; i < tasks.size(); ++i) {
-        task_params[i].Task = tasks[i];
-        task_params[i].Start = std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count();
-        task_params[i].End = std::chrono::duration_cast<std::chrono::nanoseconds>(end.time_since_epoch()).count();
-        pthread_create(&threads[i], NULL, &NRTSimulator::runTask, &task_params[i]);
+        tasks[i]->Run(std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count(),
+                    std::chrono::duration_cast<std::chrono::nanoseconds>(end.time_since_epoch()).count());
     }   
 
     // TODO: create class representing high kernel latency task
@@ -69,9 +67,8 @@ int main(int argc, char *argv[]) {
     //     usleep(1000);
     // }
 
-    void ** dummy = NULL;
     for (size_t i = 0; i < threads.size(); ++i) {
-        pthread_join(threads[i], dummy);
+        tasks[i]->Join();
         std::cout << tasks[i]->GetName() << ": worst case responce time " << tasks[i]->GetWorstCaseResponceTime() << std::endl;
     }
     if (argParser.IsPlotNeeded()) {

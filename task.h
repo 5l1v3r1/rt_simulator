@@ -9,17 +9,9 @@
 
 namespace NRTSimulator {
 
-	class TTask;
+	void * runTask(void * params);
 
-	struct TTaskTreadParams {
-        long long Start;
-        long long End;
-        std::shared_ptr<TTask> Task;
-    };
-    void * runTask (void * params);
-
-	class TTask
-	{
+	class TTask	{
 	private:
 		TRandomVar ExecutionTime;
 		std::chrono::nanoseconds Period;
@@ -35,10 +27,13 @@ namespace NRTSimulator {
 		int Priority;
 		std::string Name;
 
-		std::vector<std::chrono::nanoseconds> ResponceTimes;	
+		std::vector<std::chrono::nanoseconds> ResponceTimes;
+
+		pthread_t ThreadId;	
 	public:		
 		TTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
 		void Run(long long startAt, long long endAt);
+		void Join();
 
 		int GetCpu() const;
 		int GetPriority() const;
@@ -64,11 +59,11 @@ namespace NRTSimulator {
 
 		void WaitForNextActivation();
 		
-		virtual void JobBody(long long executionTime) = 0;	
+		virtual void JobBody(long long executionTime) = 0;
+		friend void * runTask(void * params);
 	};
 
-	class TCountingTask : public TTask
-	{
+	class TCountingTask : public TTask {
 	private:
 		static double ConvertRate; //ConvertRate how many ns one "long long" addition take. (Around 3.69103546)
 	public:
@@ -79,8 +74,7 @@ namespace NRTSimulator {
 		virtual void JobBody(long long) override;
 	};
 
-	class TTimerTask : public TTask
-	{
+	class TTimerTask : public TTask	{
 	private:
 		struct timespec JobDoneTimeSpec;
 		struct timespec JobStartCPUClockTimeSpec;

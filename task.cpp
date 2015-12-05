@@ -10,8 +10,8 @@ namespace NRTSimulator {
             std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
 
     void * runTask(void * params) {
-        TTaskTreadParams * paramsTyped = (TTaskTreadParams*)params;
-        paramsTyped->Task->Run(paramsTyped->Start, paramsTyped->End);
+        TTask * task = (TTask*)params;
+        task->TaskBody();
         return NULL;
     }
 
@@ -89,12 +89,17 @@ namespace NRTSimulator {
 
     void TTask::Run(long long startAt, long long endAt) {
         NextTaskFire = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(startAt));
-        EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));        
-        Initialize();
-        TaskBody();
+        EndSimulation = std::chrono::time_point<std::chrono::high_resolution_clock>(std::chrono::nanoseconds(endAt));
+        pthread_create(&ThreadId, NULL, &NRTSimulator::runTask, this);
     }
 
-    void TTask::TaskBody() {         
+    void TTask::Join() {
+        void ** dummy = NULL;      
+        pthread_join(ThreadId, dummy);
+    }
+
+    void TTask::TaskBody() {
+        Initialize();  
         while (NextTaskFire < EndSimulation) {
             WaitForNextActivation();             
             long long executionTime = ExecutionTime.Sample();                      
