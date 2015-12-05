@@ -29,9 +29,10 @@ namespace NRTSimulator {
 
 		std::vector<std::chrono::nanoseconds> ResponceTimes;
 
-		pthread_t ThreadId;	
-	public:		
-		TTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
+		pthread_t ThreadId;
+	public:
+		TTask(const TRandomVar & executionTime, long long period, int cpu, int priority,
+		      const std::string & name);
 		void Run(long long startAt, long long endAt);
 		void Join();
 
@@ -43,7 +44,7 @@ namespace NRTSimulator {
 
 		long long GetWorstCaseResponceTime() const;
 
-		std::vector<long long> GetResponceTimes() const;	
+		std::vector<long long> GetResponceTimes() const;
 
 		virtual ~TTask();
 	protected:
@@ -58,16 +59,18 @@ namespace NRTSimulator {
 		void SetUpPriority();
 
 		void WaitForNextActivation();
-		
+
 		virtual void JobBody(long long executionTime) = 0;
 		friend void * runTask(void * params);
 	};
 
 	class TCountingTask : public TTask {
 	private:
-		static double ConvertRate; //ConvertRate how many ns one "long long" addition take. (Around 3.69103546)
+		static double
+		ConvertRate; //ConvertRate how many ns one "long long" addition take. (Around 3.69103546)
 	public:
-		TCountingTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
+		TCountingTask(const TRandomVar & executionTime, long long period, int cpu,
+		              int priority, const std::string & name);
 		virtual ~TCountingTask();
 		static void EstimateConvertRate();
 	private:
@@ -79,7 +82,8 @@ namespace NRTSimulator {
 		struct timespec JobDoneTimeSpec;
 		struct timespec JobStartCPUClockTimeSpec;
 	public:
-		TTimerTask(const TRandomVar & executionTime, long long period, int cpu, int priority, const std::string & name);
+		TTimerTask(const TRandomVar & executionTime, long long period, int cpu,
+		           int priority, const std::string & name);
 		virtual ~TTimerTask();
 	private:
 		virtual void JobBody(long long) override;

@@ -5,11 +5,11 @@
 
 namespace NRTSimulator {
 	int TRandomVar::seed = 0;
-	TRandomVar::TRandomVar(const std::vector<double> & mass, const std::vector<long long> & values)
+	TRandomVar::TRandomVar(const std::vector<double> & mass,
+	                       const std::vector<long long> & values)
 		: Distribution(mass.begin(), mass.end())
 		, Values(values)
-		, Generator(seed++)
-	{
+		, Generator(seed++) {
 	}
 
 	long long TRandomVar::Sample() {
@@ -18,5 +18,5 @@ namespace NRTSimulator {
 
 	long long TRandomVar::GetMaxValue() const {
 		return *std::max_element(Values.begin(), Values.end());
-	}	
+	}
 }

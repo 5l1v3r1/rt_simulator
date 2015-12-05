@@ -14,6 +14,11 @@ $(SIMULATOR): $(SOURCE_SIMULATOR:.cpp=.o)
 clean:
 	rm -f *.d *.o $(SIMULATOR)
 
+indent:
+	astyle --style=java --pad-header --indent=tab --indent-namespaces --break-blocks\
+		--pad-oper --unpad-paren --add-one-line-brackets \
+		--suffix=none --max-code-length=80 --break-after-logical  *.cpp *.h
+
 ###################################
 %.d: SOURCE_SIMULATOR
 	$(CXX) -MM -MF $@ $<
