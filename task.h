@@ -1,13 +1,23 @@
 #pragma once
 
 #include <sys/time.h>
-#include <signal.h>
 #include <time.h>
 #include <chrono>
+#include <memory>
 
 #include "random_var.h"
 
 namespace NRTSimulator {
+
+	class TTask;
+
+	struct TTaskTreadParams {
+        long long Start;
+        long long End;
+        std::shared_ptr<TTask> Task;
+    };
+    void * runTask (void * params);
+
 	class TTask
 	{
 	private:

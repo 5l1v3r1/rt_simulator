@@ -1,7 +1,3 @@
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
 #include "cdf_plot.h"
 
 namespace NRTSimulator {

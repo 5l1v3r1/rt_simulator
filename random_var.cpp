@@ -1,15 +1,11 @@
-#include <numeric>
 #include <algorithm>
 #include <random>
-
-#include <sys/types.h>
-#include <unistd.h>
 
 #include "random_var.h"
 
 namespace NRTSimulator {
 	int TRandomVar::seed = 0;
-	TRandomVar::TRandomVar(const std::vector<double> & mass, const vector<long long> & values)
+	TRandomVar::TRandomVar(const std::vector<double> & mass, const std::vector<long long> & values)
 		: Distribution(mass.begin(), mass.end())
 		, Values(values)
 		, Generator(seed++)

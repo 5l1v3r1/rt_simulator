@@ -1,24 +1,19 @@
 #include <chrono>
 #include <iostream>
-#include <cstring>
-#include <sys/time.h>
-#include <signal.h>
-#include <time.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
 #include <algorithm>
 
-#include <limits>
-
 #include "task.h"
-
 
 namespace NRTSimulator {
 
     static const long long NUMBER_OF_NANOSECONDS_IN_SECOND = 
             std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::seconds(1)).count();
+
+    void * runTask(void * params) {
+        TTaskTreadParams * paramsTyped = (TTaskTreadParams*)params;
+        paramsTyped->Task->Run(paramsTyped->Start, paramsTyped->End);
+        return NULL;
+    }
 
     TTask::TTask(const TRandomVar & executionTime, long long period,
                  int cpu, int priority, const std::string & name)

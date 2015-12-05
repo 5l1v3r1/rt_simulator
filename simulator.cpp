@@ -1,28 +1,13 @@
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <iostream>
 #include <chrono>
-#include <sstream>
 #include <vector>
 
+#include "task.h"
 #include "tasks_file_parser.h"
 #include "rta.h"
 #include "cmd_arg_parser.h"
 #include "cdf_plot.h"
 
-namespace NRTSimulator {
-    struct TTreadParams {
-        long long Start;
-        long long End;
-        std::shared_ptr<TTask> Task;
-    };
-    static void * runTask (void * params) {
-        TTreadParams * paramsTyped = (TTreadParams *)params;
-        paramsTyped->Task->Run(paramsTyped->Start, paramsTyped->End);
-        return NULL;
-    }
-}
 
 static const std::chrono::seconds TASK_OFFSET(2);
 int main(int argc, char *argv[]) {
@@ -56,8 +41,8 @@ int main(int argc, char *argv[]) {
     auto end = start + std::chrono::seconds(argParser.GetSimulationTime());    
 
     std::vector<pthread_t> threads(tasks.size());
-    std::vector<NRTSimulator::TTreadParams> task_params(tasks.size());
-    for (size_t i = 0; i < tasks.size(); ++i) {        
+    std::vector<NRTSimulator::TTaskTreadParams> task_params(tasks.size());
+    for (size_t i = 0; i < tasks.size(); ++i) {
         task_params[i].Task = tasks[i];
         task_params[i].Start = std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count();
         task_params[i].End = std::chrono::duration_cast<std::chrono::nanoseconds>(end.time_since_epoch()).count();

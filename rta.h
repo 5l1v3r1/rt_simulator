@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#include "tasks_file_parser.h"
+#include "task.h"
 
 namespace NRTSimulator {
 	class TRTA {
