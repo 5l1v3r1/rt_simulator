@@ -1,5 +1,7 @@
 #include <getopt.h>
 #include <iostream>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "cmd_arg_parser.h"
 
@@ -38,6 +40,8 @@ namespace NRTSimulator
 			{0, 0, 0,  0}
 		};
 
+		struct stat st = {0};
+
 		int long_index = 0;
 		int opt = 0;
 
@@ -66,6 +70,15 @@ namespace NRTSimulator
 
 			case 'o':
 				OutputDirecory = std::string(optarg);
+
+				if (stat(OutputDirecory.c_str(), &st) == -1) {
+					if (mkdir(OutputDirecory.c_str(), 0777) < 0) {
+						std::cout << "Failed to create output directory. Wrong --output(-o) parameter."
+						          << std::endl;
+						exit(-1);
+					}
+				}
+
 				break;
 
 			case 'h':

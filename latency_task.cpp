@@ -16,17 +16,20 @@ namespace NRTSimulator
 		CPU_SET(taskParams->CPU, &set);
 
 		if (pthread_setaffinity_np(pthread_self(), sizeof(set), &set) == -1) {
-		    std::cerr << "Failed to set cpu in latency task." << std::endl;
-		    return NULL;
+			std::cerr << "Failed to set cpu in latency task." << std::endl;
+			return NULL;
 		}
-		while(std::chrono::high_resolution_clock::now() < taskParams->End) {
-		    int p = fork();
-		    if (p == 0) {
-		        sleep(100);
-		    } else {
-		        kill(p, SIGTERM);
-		    }
-		    usleep(1000);
+
+		while (std::chrono::high_resolution_clock::now() < taskParams->End) {
+			int p = fork();
+
+			if (p == 0) {
+				sleep(100);
+			} else {
+				kill(p, SIGTERM);
+			}
+
+			usleep(1000);
 		}
 
 		return NULL;
@@ -35,7 +38,7 @@ namespace NRTSimulator
 	TLatencyTaskSet::TLatencyTaskSet(const std::vector <int> cpus)
 		: CPUS(cpus)
 		, Params(cpus.size())
-		, ThreadIds(cpus.size())		
+		, ThreadIds(cpus.size())
 	{
 
 	}
@@ -51,7 +54,8 @@ namespace NRTSimulator
 		}
 	}
 
-	void TLatencyTaskSet::Join() {
+	void TLatencyTaskSet::Join()
+	{
 		for (size_t i = 0; i < CPUS.size(); ++i) {
 			void ** dummy = NULL;
 			pthread_join(ThreadIds[i], dummy);

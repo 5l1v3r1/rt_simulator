@@ -9,6 +9,7 @@
 #include "cmd_arg_parser.h"
 #include "cdf_plot.h"
 #include "latency_task.h"
+#include "output.h"
 
 
 static const std::chrono::seconds TASK_OFFSET(2);
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 
 	std::vector<pthread_t> threads(tasks.size());
 
-    std::cout << "Run real time tasks..." << std::endl;
+	std::cout << "Run real time tasks..." << std::endl;
 
 	for (size_t i = 0; i < tasks.size(); ++i) {
 		tasks[i]->Run(std::chrono::duration_cast<std::chrono::nanoseconds>
@@ -57,20 +58,24 @@ int main(int argc, char *argv[])
 	}
 
 
-    if (argParser.IsHighKernelLatencyNeeded()) {
-        std::cout << "Run hight latency tasks..." << std::endl;
-        std::vector<int> cpus;
-        for (const auto & task: tasks) {
-            int cpu = task->GetCpu();
-            if(std::find(cpus.begin(), cpus.end(), cpu) == cpus.end()) {
-                cpus.push_back(cpu);
-            }
-        }
+	if (argParser.IsHighKernelLatencyNeeded()) {
+		std::cout << "Run hight latency tasks..." << std::endl;
+		std::vector<int> cpus;
 
-        NRTSimulator::TLatencyTaskSet latencyTaskSet(cpus);
-        latencyTaskSet.Run(start, end);
-        latencyTaskSet.Join();
-    }
+		for (const auto & task : tasks) {
+			int cpu = task->GetCpu();
+
+			if (std::find(cpus.begin(), cpus.end(), cpu) == cpus.end()) {
+				cpus.push_back(cpu);
+			}
+		}
+
+		NRTSimulator::TLatencyTaskSet latencyTaskSet(cpus);
+		latencyTaskSet.Run(start, end);
+		latencyTaskSet.Join();
+	}
+
+	std::cout << "Wait while simulation running..." << std::endl;
 
 
 	for (size_t i = 0; i < threads.size(); ++i) {
@@ -92,6 +97,11 @@ int main(int argc, char *argv[])
 		          rta.EstimateWorstCaseKernellLatency() << std::endl;
 	}
 
-	//TODO: Create class that write output (Check if directory exists in cmd_arg_parser)
+	if (!argParser.GetOutputDirectory().empty()) {
+		std::cout << "Output result in '" << argParser.GetOutputDirectory() <<
+		          "' directory..." << std::endl;
+		NRTSimulator::TOutput(argParser.GetOutputDirectory()).Write(tasks);
+	}
+
 	return 0;
 }

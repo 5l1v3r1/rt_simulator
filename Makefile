@@ -4,7 +4,7 @@ LDLIBS = -lm -lrt -lconfig++
 
 SIMULATOR=simulator
 
-SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp task.cpp random_var.cpp rta.cpp cmd_arg_parser.cpp cdf_plot.cpp latency_task.cpp
+SOURCE_SIMULATOR=simulator.cpp tasks_file_parser.cpp task.cpp random_var.cpp rta.cpp cmd_arg_parser.cpp cdf_plot.cpp latency_task.cpp output.cpp
 
 all: $(SIMULATOR)
 

@@ -6,8 +6,8 @@ namespace NRTSimulator
 
 	struct TLatencyTaskParams {
 		std::chrono::time_point<std::chrono::high_resolution_clock> Start;
-	    std::chrono::time_point<std::chrono::high_resolution_clock> End;
-	    int CPU;
+		std::chrono::time_point<std::chrono::high_resolution_clock> End;
+		int CPU;
 	};
 
 	class TLatencyTaskSet
