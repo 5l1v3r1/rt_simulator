@@ -100,7 +100,8 @@ namespace NRTSimulator
 
 	void TTask::Initialize()
 	{
-		ResponceTimes.reserve((EndSimulation - NextJobFire) / std::chrono::nanoseconds(Period.GetMinValue()) + 1);
+		ResponceTimes.reserve((EndSimulation - NextJobFire) / std::chrono::nanoseconds(
+		                          Period.GetMinValue()) + 1);
 		SetUpPriority();
 		SetUpCPU();
 	}

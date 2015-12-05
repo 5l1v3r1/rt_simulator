@@ -12,8 +12,8 @@ namespace NRTSimulator
 	{
 	}
 
-	TRandomVar TTaskFileParser::ParseRandomVar(const libconfig::Setting & probs, 
-									const std::string name)
+	TRandomVar TTaskFileParser::ParseRandomVar(const libconfig::Setting & probs,
+	        const std::string name)
 	{
 		std::vector<double> probMasses;
 		std::vector<long long> probTimes;

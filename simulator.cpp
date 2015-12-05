@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
 	for (size_t taskNumber = 0; taskNumber < tasks.size(); ++ taskNumber) {
 		if (rta.CheckIsShedulable(taskNumber)) {
-			std::cout << tasks[taskNumber]->GetName() << ": worst case responce time "
+			std::cout << tasks[taskNumber]->GetName() << ": worst case response time "
 			          << rta.GetWorstCaseResponceTime(taskNumber) << std::endl;
 		} else {
 			std::cout << tasks[taskNumber]->GetName() << ": is not schedulable" <<
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 
 	for (size_t i = 0; i < threads.size(); ++i) {
 		tasks[i]->Join();
-		std::cout << tasks[i]->GetName() << ": worst case responce time " <<
+		std::cout << tasks[i]->GetName() << ": worst case response time " <<
 		          tasks[i]->GetWorstCaseResponceTime() << std::endl;
 	}
 
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (argParser.IsHighKernelLatencyNeeded()) {
-		std::cout << "Worst case kernell latency: " <<
+		std::cout << "Worst case kernel latency: " <<
 		          rta.EstimateWorstCaseKernellLatency() << std::endl;
 	}
 

@@ -12,7 +12,7 @@ namespace NRTSimulator
 	const std::string TCmdArgParser::HELP =
 	    USAGE +
 	    "Simulate set of real time tasks, and perform responce time analysis\n"
-	    "  -f,--file\t\tfile with task parameter (default task_spec.cfg)\n"
+	    "  -f,--file\t\tfile with tasks parameters (default task_spec.cfg)\n"
 	    "  -o,--output\t\tdirectory to which put simulated responce times of the\n\t\t\t tasks (default no output)\n"
 	    "  -s,--simtime\t\ttime of simulation in seconds (default 10s)\n"
 	    "  -p,--plot\t\tplot task CDF (usign gnuplot)\n"
