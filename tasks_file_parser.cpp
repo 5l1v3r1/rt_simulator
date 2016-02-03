@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <libconfig.h++>
+#include <algorithm>
 
 
 namespace NRTSimulator
@@ -39,6 +40,11 @@ namespace NRTSimulator
 
 			probMasses.push_back(mass);
 			probTimes.push_back(t);
+		}
+		if (std::abs(std::accumulate(probMasses.begin(), probMasses.end(),
+		                             0.0) - 1) > 0.001) {
+			std::cerr << "Probabilitye in " << name << " don`t sum up to 1" << std::endl;
+			exit(-1);
 		}
 
 		return TRandomVar(probMasses, probTimes);

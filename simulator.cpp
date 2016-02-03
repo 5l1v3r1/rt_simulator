@@ -74,10 +74,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	
+
 	std::cout << "Worst case kernel latency: " <<
-		          rta.EstimateWorstCaseKernellLatency() << std::endl;
-	
+	          rta.EstimateWorstCaseKernellLatency() << std::endl;
+
 
 	if (!argParser.GetOutputDirectory().empty()) {
 		std::cout << "Output result in '" << argParser.GetOutputDirectory() <<
