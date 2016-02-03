@@ -16,7 +16,6 @@ namespace NRTSimulator
 	    "  -o,--output\t\tdirectory to which put simulated responce times of the\n\t\t\t tasks (default no output)\n"
 	    "  -s,--simtime\t\ttime of simulation in seconds (default 10s)\n"
 	    "  -p,--plot\t\tplot task CDF (usign gnuplot)\n"
-	    "  -k,--latency\t\trun tasks with hight kernel latency\n\t\t\t and estimate kernel latency\n"
 	    "  -c,--counting\t\tuse counting to model execution time\n\t\t\t (instead of busy wait on timer)\n";
 
 	TCmdArgParser::TCmdArgParser(int argc, char *argv[])
@@ -24,7 +23,6 @@ namespace NRTSimulator
 		, OutputDirecory("")
 		, SimulationTime(10)
 		, PlotNeeded(false)
-		, HighKernelLatencyNeeded(false)
 		, CountingUsed(false)
 	{
 		char const* programName = argv[0];
@@ -35,7 +33,6 @@ namespace NRTSimulator
 			{"plot", no_argument, 0, 'p'},
 			{"counting", no_argument, 0, 'c'},
 			{"output", required_argument, 0, 'o'},
-			{"latency", no_argument, 0, 'l'},
 			{"help", no_argument, 0, 'h'},
 			{0, 0, 0,  0}
 		};
@@ -45,7 +42,7 @@ namespace NRTSimulator
 		int long_index = 0;
 		int opt = 0;
 
-		while ((opt = getopt_long(argc, argv, "hplcf:s:o:", long_options,
+		while ((opt = getopt_long(argc, argv, "hpcf:s:o:", long_options,
 		                          &long_index)) != -1) {
 			switch (opt) {
 			case 'f' :
@@ -62,10 +59,6 @@ namespace NRTSimulator
 
 			case 'p':
 				PlotNeeded = true;
-				break;
-
-			case 'l':
-				HighKernelLatencyNeeded = true;
 				break;
 
 			case 'o':
@@ -106,10 +99,6 @@ namespace NRTSimulator
 	bool TCmdArgParser::IsPlotNeeded() const
 	{
 		return PlotNeeded;
-	}
-	bool TCmdArgParser::IsHighKernelLatencyNeeded() const
-	{
-		return HighKernelLatencyNeeded;
 	}
 	bool TCmdArgParser::IsCountingUsed() const
 	{

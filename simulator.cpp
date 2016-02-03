@@ -8,7 +8,6 @@
 #include "rta.h"
 #include "cmd_arg_parser.h"
 #include "cdf_plot.h"
-#include "latency_task.h"
 #include "output.h"
 
 
@@ -58,24 +57,6 @@ int main(int argc, char *argv[])
 	}
 
 
-	if (!argParser.GetHightKernelLatencyScript().empty()) {
-		std::cout << "Run hight latency tasks..." << std::endl;
-		std::vector<int> cpus;
-
-		for (const auto & task : tasks) {
-			int cpu = task->GetCpu();
-
-			if (std::find(cpus.begin(), cpus.end(), cpu) == cpus.end()) {
-				cpus.push_back(cpu);
-			}
-		}
-
-		NRTSimulator::TLatencyTaskSet latencyTaskSet(cpus,
-		        argParser.GetHightKernelLatencyScript());
-		latencyTaskSet.Run(start, end);
-		latencyTaskSet.Join();
-	}
-
 	std::cout << "Wait while simulation running..." << std::endl;
 
 
@@ -93,10 +74,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!argParser.GetHightKernelLatencyScript().empty()) {
-		std::cout << "Worst case kernel latency: " <<
+	
+	std::cout << "Worst case kernel latency: " <<
 		          rta.EstimateWorstCaseKernellLatency() << std::endl;
-	}
+	
 
 	if (!argParser.GetOutputDirectory().empty()) {
 		std::cout << "Output result in '" << argParser.GetOutputDirectory() <<

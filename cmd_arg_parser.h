@@ -11,7 +11,6 @@ namespace NRTSimulator
 		std::string OutputDirecory;
 		long long SimulationTime;
 		bool PlotNeeded;
-		std::string KernelLatencyScript;
 		bool CountingUsed;
 	public:
 		TCmdArgParser(int argc, char *argv[]);
@@ -19,7 +18,6 @@ namespace NRTSimulator
 		const std::string & GetOutputDirectory() const;
 		long long GetSimulationTime() const;
 		bool IsPlotNeeded() const;
-		const std::string & GetHightKernelLatencyScript() const;
 		bool IsCountingUsed() const ;
 	};
 }
