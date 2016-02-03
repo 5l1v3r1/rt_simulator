@@ -2,11 +2,13 @@
 #include <iostream>
 #include <signal.h>
 #include <unistd.h>
+#include <thread>
 
 #include "latency_task.h"
 
 namespace NRTSimulator
 {
+
 	static void * runLatencyTask(void * params)
 	{
 		TLatencyTaskParams * taskParams = (TLatencyTaskParams*)params;
@@ -20,25 +22,27 @@ namespace NRTSimulator
 			return NULL;
 		}
 
-		while (std::chrono::high_resolution_clock::now() < taskParams->End) {
-			int p = fork();
+		int p = fork();
 
-			if (p == 0) {
-				sleep(100);
-			} else {
-				kill(p, SIGTERM);
-			}
-
-			usleep(1000);
+		if (p == 0) {
+			char * args[1];
+			args[0] = new char[1];
+			args[0][0] = 0;
+			execve(taskParams->HighLatencyScript.c_str(), args, NULL);
+		} else {
+			std::this_thread::sleep_until(taskParams->End);
+			kill(p, SIGTERM);
 		}
 
 		return NULL;
 	}
 
-	TLatencyTaskSet::TLatencyTaskSet(const std::vector <int> cpus)
+	TLatencyTaskSet::TLatencyTaskSet(const std::vector <int> cpus,
+	                                 const std::string & highLatencyScript)
 		: CPUS(cpus)
 		, Params(cpus.size())
 		, ThreadIds(cpus.size())
+		, HighLatencyScript(highLatencyScript)
 	{
 
 	}
@@ -50,7 +54,9 @@ namespace NRTSimulator
 			Params[i].CPU = CPUS[i];
 			Params[i].Start = start;
 			Params[i].End = end;
+			Params[i].HighLatencyScript = HighLatencyScript;
 			pthread_create(&ThreadIds[i], NULL, &runLatencyTask, &Params[i]);
+
 		}
 	}
 

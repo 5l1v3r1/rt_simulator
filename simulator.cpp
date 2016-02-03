@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	if (argParser.IsHighKernelLatencyNeeded()) {
+	if (!argParser.GetHightKernelLatencyScript().empty()) {
 		std::cout << "Run hight latency tasks..." << std::endl;
 		std::vector<int> cpus;
 
@@ -70,7 +70,8 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		NRTSimulator::TLatencyTaskSet latencyTaskSet(cpus);
+		NRTSimulator::TLatencyTaskSet latencyTaskSet(cpus,
+		        argParser.GetHightKernelLatencyScript());
 		latencyTaskSet.Run(start, end);
 		latencyTaskSet.Join();
 	}
@@ -92,7 +93,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (argParser.IsHighKernelLatencyNeeded()) {
+	if (!argParser.GetHightKernelLatencyScript().empty()) {
 		std::cout << "Worst case kernel latency: " <<
 		          rta.EstimateWorstCaseKernellLatency() << std::endl;
 	}
