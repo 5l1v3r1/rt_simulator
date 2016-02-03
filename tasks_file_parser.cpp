@@ -43,7 +43,7 @@ namespace NRTSimulator
 		}
 		if (std::abs(std::accumulate(probMasses.begin(), probMasses.end(),
 		                             0.0) - 1) > 0.001) {
-			std::cerr << "Probabilitye in " << name << " don`t sum up to 1" << std::endl;
+			std::cerr << "Probabilities in " << name << " don`t sum up to 1" << std::endl;
 			exit(-1);
 		}
 

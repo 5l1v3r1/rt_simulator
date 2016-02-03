@@ -3,27 +3,27 @@ output: pdf_document
 ---
 # Real Time Simulator 
 
-This is a project for Real Time Systems course. The main goal of this project is to create set real time tasks (with configurable execution times and relative periods) mesure worst case responce time and compare this responce time with theoretical responce time computed using RTA.
+This is a project for Real Time Systems course. The main goal of this project is to create set real time tasks (with configurable execution times and relative periods) measure worst case response time and compare this response time with theoretical response time computed using RTA.
 
 
 ## Requirments
-* libgonfig (I instaled it like this sudo apt-get install libconfig++8-dev)
+* libgonfig (I installed it like this sudo apt-get install libconfig++8-dev)
 * gnuplot (Only if run with --plot (-p) option)
-* astyle (Only for code formating e.g. make indent)
+* astyle (Only for code formatting e.g. make indent)
 
 ## Usage
 Usage: simulator [\-f file] [\-o directory] [\-s number] [\-plc]
 
 * \-f, \-\-file      (file with tasks parameters (default task_spec.cfg))
-* \-o, \-\-output    (directory to which put simulated responce times of the tasks (default no output))
+* \-o, \-\-output    (directory to which put simulated response times of the tasks (default no output))
 * \-s, \-\-simtime   (time of simulation in seconds (default 10s))
-* \-p, \-\-plot      (plot task CDF (usign gnuplot))
+* \-p, \-\-plot      (plot task CDF (using gnuplot))
 * \-c, \-\-counting  (use counting to model execution time (instead of busy wait on timer))
 * \-h, \-\-help     (run help command)
 
 ### File option
 File is file in libconfig format (see example task_spec.cfg). Here you can specify tasks parameters, e.g.
-to which cpu task will be assigned (cpu option), task priority (priotiry option), inter arrival times (period option) for this option you should specify a pmf, and execution time (execution option) also pmf should be specified.
+to which CPU task will be assigned (CPU option), task priority (priority option), inter arrival times (period option) for this option you should specify a pmf, and execution time (execution option) also pmf should be specified.
 
 
 ## Execution time modeling
