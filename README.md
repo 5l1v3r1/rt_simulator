@@ -1,6 +1,3 @@
----
-output: pdf_document
----
 # Real Time Simulator 
 
 This is a project for Real Time Systems course. The main goal of this project is to create set real time tasks (with configurable execution times and relative periods) measure worst case response time and compare this response time with theoretical response time computed using RTA.
